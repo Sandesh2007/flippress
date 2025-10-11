@@ -31,12 +31,12 @@ interface Publication {
 
 export default function PublicProfileByUsernamePage() {
   const params = useParams();
-  const username = decodeURIComponent(params?.username as string)?.toLowerCase();
+  const username = decodeURIComponent(params?.username as string);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [publications, setPublications] = useState<Publication[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const profileUrl = typeof window !== 'undefined' ? 'flippress.vercel.app/profile/' + username : '';
+  const profileUrl = typeof window !== 'undefined' ? `flippress.vercel.app/profile/${encodeURIComponent(username)}` : '';
   const router = useRouter();
 
   useEffect(() => {

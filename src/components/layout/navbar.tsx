@@ -185,7 +185,7 @@ export function Navbar() {
                     {/* Full Screen Panel */}
                     <div
                         ref={menuRef}
-                        className={`fixed inset-0 w-screen h-screen glass shadow-2xl transform transition-all duration-300 ease-out ${isAnimating ? '-translate-x-full opacity-0' : 'translate-x-0 opacity-100'
+                        className={`fixed inset-0 w-screen h-screen bg-neutral-50 dark:bg-neutral-800 shadow-2xl transform transition-all duration-300 ease-out ${isAnimating ? '-translate-x-full opacity-0' : 'translate-x-0 opacity-100'
                             }`}
                     >
                         {/* Header */}
@@ -289,7 +289,7 @@ export function Navbar() {
                                     Pricing
                                 </Link>
                                 {user ? (
-                                    <Link href="/profile" className="flex items-center gap-4 px-4 py-3 hover:bg-accent/50 rounded-xl transition-all duration-300" onClick={handleCloseMenu}>
+                                    <Link href="/profile" className="flex items-center gap-4 px-4 py-3 bg-primary/20 rounded-xl transition-all duration-300" onClick={handleCloseMenu}>
                                         <CurrentUserAvatar />
                                         <span className="font-medium text-sm truncate">{user.username || user.email}</span>
                                     </Link>
@@ -309,9 +309,9 @@ export function Navbar() {
 
                                 {/* Plan Info */}
                                 {user && (
-                                    <div className="mt-4 px-4 py-3 glass rounded-xl border border-border/50">
+                                    <div className="mt-4 px-4 py-3 bg-green-500/20 rounded-xl outline outline-green-500">
                                         <div className="text-xs text-black dark:text-white font-medium mb-1">
-                                            Current plan: <span className="text-green-500 font-medium">Basic</span>
+                                            Current plan: <span className="text-green-800 dark:text-green-300 font-medium">Basic</span>
                                         </div>
                                     </div>
                                 )}
