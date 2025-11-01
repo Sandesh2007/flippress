@@ -111,11 +111,11 @@ export const Testimonials = () => {
         <div className="mt-16 text-center">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-500 mb-2">1K+</div>
+              <div className="text-3xl font-bold text-blue-500 mb-2">100+</div>
               <div className="text-sm text-muted-foreground">Happy Users</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-bold text-blue-500 mb-2">5K+</div>
+              <div className="text-3xl font-bold text-blue-500 mb-2">50+</div>
               <div className="text-sm text-muted-foreground">PDFs Converted</div>
             </div>
             <div className="text-center">

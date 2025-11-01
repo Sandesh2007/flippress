@@ -106,7 +106,7 @@ const Pricing = () => {
                 <div className="w-12 h-12 rounded-xl bg-gradient-hero flex items-center justify-center mb-4 group-hover:animate-heartbeat">
                   <Zap className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Lightning Fast</h3>
+                <h3 className="text-lg font-semibold mb-2">Fast</h3>
                 <p className="text-sm text-muted-foreground">
                   Convert your PDFs in seconds with our optimized processing engine.
                 </p>

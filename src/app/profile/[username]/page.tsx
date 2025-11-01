@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import LikeButton from '@/components/likes-button';
 import { MapPin, BookOpen, Calendar, Share2, ExternalLink } from 'lucide-react';
-import logo from '../../../../public/logo.svg';
+// import logo from '@/../public/logo.svg'
 
 interface UserProfile {
   id: string;
@@ -181,7 +181,7 @@ export default function PublicProfileByUsernamePage() {
           <div className="text-center py-20 animate-in fade-in-0 slide-in-from-bottom-4 duration-500">
             <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
               <img
-                src={logo.src}
+                src={"../../../public/logo.svg"}
                 draggable="false"
                 alt="logo"
                 className="w-12 h-12" />
@@ -254,7 +254,7 @@ export default function PublicProfileByUsernamePage() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => window.location.href = `/view?pdf=${encodeURIComponent(pub.pdf_url)}&title=${encodeURIComponent(pub.title)}`}
+                            onClick={() => window.location.href = `/view?id=${encodeURIComponent(pub.id)}`}
                             className='transition-all duration-200 hover:scale-105 group/btn'
                           >
                             <ExternalLink className="w-4 h-4 mr-2 group-hover/btn:rotate-12 transition-transform duration-200" />

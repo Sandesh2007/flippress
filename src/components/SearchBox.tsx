@@ -54,34 +54,46 @@ export default function SearchBox({
         const supabase = createClient();
 
         // Search for users
-        const { data: userData } = await supabase
+        const { data: userData, error: userError } = await supabase
           .from('profiles')
           .select('username,avatar_url')
           .ilike('username', `%${value}%`)
           .limit(3);
 
-        // Search for publications
-        const { data: pubData } = await supabase
+        if (userError) console.error('User search error:', userError);
+        setUserResults(userData || []);
+
+        const { data: pubData, error: pubError } = await supabase
           .from('publications')
-          .select(`
-            id,
-            title,
-            user_id,
-            profiles!publications_user_id_fkey(username, avatar_url)
-          `)
+          .select('id, title, user_id')
           .or(`title.ilike.%${value}%,description.ilike.%${value}%`)
           .limit(5);
 
-        setUserResults(userData || []);
+        if (pubError) console.error('Publication search error:', pubError);
 
-        // Transform publication results
-        const transformedPubResults = pubData?.map((pub: any) => ({
-          id: pub.id,
-          title: pub.title,
-          user_id: pub.user_id,
-          username: pub.profiles?.username || 'Unknown',
-          avatar_url: pub.profiles?.avatar_url || null
-        })) || [];
+        let transformedPubResults: PublicationSearchResult[] = [];
+        if (pubData && pubData.length > 0) {
+          const userIds = pubData.map(pub => pub.user_id);
+          const { data: profilesData } = await supabase
+            .from('profiles')
+            .select('id, username, avatar_url')
+            .in('id', userIds);
+
+          const profileMap = new Map(
+            profilesData?.map(profile => [profile.id, profile]) || []
+          );
+
+          transformedPubResults = pubData.map(pub => {
+            const profile = profileMap.get(pub.user_id);
+            return {
+              id: pub.id,
+              title: pub.title,
+              user_id: pub.user_id,
+              username: profile?.username || 'Unknown',
+              avatar_url: profile?.avatar_url || null
+            };
+          });
+        }
 
         setPublicationResults(transformedPubResults);
         setShowDropdown(true);
@@ -122,11 +134,6 @@ export default function SearchBox({
   const hasResults = userResults.length > 0 || publicationResults.length > 0;
   const showEmptyState = !hasResults && !isLoading && search.trim();
 
-  const handleRecentSearchClick = (term: string) => {
-    setSearch(term);
-    handleSearch(term);
-  };
-
   return (
     <div className={`relative w-full max-w-2xl ${className}`} ref={searchRef}>
       {/* Search Input */}
@@ -150,7 +157,7 @@ export default function SearchBox({
 
           {search && (
             <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full glass hover:bg-gray-200 dark:hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center group"
+              className="absolute right-3 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full glass hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200 flex items-center justify-center group"
               onClick={clearSearch}
             >
               <X className="h-4 w-4 text-gray-400 hover:text-primary" />
@@ -161,61 +168,20 @@ export default function SearchBox({
 
       {/* Search Results Dropdown */}
       {showDropdown && (
-        <div className={`absolute top-full left-0 right-0 mt-3 bg-muted-40 border-gray-200 dark:border-neutral-700 rounded-2xl shadow-2xl max-h-[28rem] overflow-hidden z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200 ${showDropdown ?? 'hidden'} `}>
-          <div className="overflow-y-auto max-h-[28rem] glass scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+        <div className="absolute top-full left-0 right-0 mt-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl max-h-[28rem] overflow-hidden z-50 animate-in fade-in-0 slide-in-from-top-2 duration-200">
+          <div className="overflow-y-auto max-h-[28rem] scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
 
             {/* Loading State */}
             {isLoading && (
-              <div className="p-8 text-center glass">
+              <div className="p-8 text-center">
                 <LoadingSpinner showSparkles text='Searching the community...' />
-              </div>
-            )}
-
-            {/* User Results */}
-            {userResults.length > 0 && (
-              <div className="border-b border-gray-100 dark:border-neutral-800 bg-muted/40">
-                <div className="px-5 py-3 flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 glass">
-                  <Users className="w-4 h-4" />
-                  People ({userResults.length})
-                </div>
-                {userResults.map((profile, index) => (
-                  <Link
-                    key={profile.username}
-                    href={`/profile/${profile.username}`}
-                    className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-muted transition-all duration-150 group"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <div className="relative ">
-                      {profile.avatar_url ? (
-                        <img
-                          src={profile.avatar_url}
-                          alt={profile.username.charAt(0)}
-                          className={`w-10 h-10 rounded-full items-center flex justify-center object-cover border-2 
-                            text-neutral-50 bg-neutral-700
-                            border-gray-200 dark:border-gray-700 group-hover:border-blue-500 transition-colors overflow-hidden uppercase`}
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-blue-500 border-2 border-gray-200 dark:border-neutral-700 group-hover:border-blue-500 flex items-center justify-center transition-colors">
-                          <span className="text-lg font-semibold text-white">
-                            {profile.username.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                        {profile.username}
-                      </span>
-                    </div>
-                  </Link>
-                ))}
               </div>
             )}
 
             {/* Publication Results */}
             {publicationResults.length > 0 && (
               <div>
-                <div className="px-5 py-3 flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-50">
+                <div className="px-5 py-3 flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
                   <FileText className="w-4 h-4" />
                   Publications ({publicationResults.length})
                 </div>
@@ -223,7 +189,7 @@ export default function SearchBox({
                   <a
                     key={pub.id}
                     href={`/profile/${pub.username}`}
-                    className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-50 transition-all duration-150 group"
+                    className="flex items-start gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-150 group"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex-shrink-0 mt-0.5">
@@ -246,12 +212,47 @@ export default function SearchBox({
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                         by <span className="font-medium">@{pub.username}</span>
                       </p>
-                      <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                        <span>• 5 min read</span>
-                        <span>• Published 2 days ago</span>
-                      </div>
                     </div>
                   </a>
+                ))}
+              </div>
+            )}
+            
+            {/* User Results */}
+            {userResults.length > 0 && (
+              <div className="border-b border-gray-100 dark:border-gray-700">
+                <div className="px-5 py-3 flex items-center gap-2 text-sm font-medium text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">
+                  <Users className="w-4 h-4" />
+                  People ({userResults.length})
+                </div>
+                {userResults.map((profile, index) => (
+                  <Link
+                    key={profile.username}
+                    href={`/profile/${profile.username}`}
+                    className="flex items-center gap-4 px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all duration-150 group"
+                    style={{ animationDelay: `${index * 50}ms` }}
+                  >
+                    <div className="relative">
+                      {profile.avatar_url ? (
+                        <img
+                          src={profile.avatar_url}
+                          alt={profile.username}
+                          className="w-10 h-10 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-500 transition-colors"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-500 border-2 border-gray-200 dark:border-gray-700 group-hover:border-blue-500 flex items-center justify-center transition-colors">
+                          <span className="text-lg font-semibold text-white">
+                            {profile.username.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-gray-900 dark:text-gray-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {profile.username}
+                      </span>
+                    </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -259,7 +260,7 @@ export default function SearchBox({
             {/* Empty State */}
             {showEmptyState && (
               <div className="p-8 text-center">
-                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">No results found</h3>

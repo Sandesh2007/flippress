@@ -606,7 +606,7 @@ export default function UserProfile() {
                                     <Button
                                       variant="outline"
                                       size="sm"
-                                      onClick={() => router.push(`/view?pdf=${encodeURIComponent(pub.pdf_url)}&title=${encodeURIComponent(pub.title)}`)}
+                                      onClick={() => router.push(`/view?id=${encodeURIComponent(pub.id)}`)}
                                       className='cursor-pointer transition-all duration-200 hover:scale-105 rounded-xl'
                                     >
                                       View Publication

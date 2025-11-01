@@ -284,9 +284,7 @@ export default function OtherUsersPublications({
                 <div className="group mb-6">
                   <Link
                     href={`/profile/${userProfile.username}`}
-                    className="flex items-center gap-4 p-6 glass
-                    outline-1
-                    rounded-xl hover:border-border/60 transition-all duration-300 hover:shadow-soft hover:scale-[1.01]"
+                    className="flex items-center gap-4 p-6 glass outline-1 rounded-xl hover:border-border/60 transition-all duration-300 hover:shadow-soft hover:scale-[1.01]"
                   >
                     <div className="relative">
                       {userProfile.avatar_url ? (
@@ -298,7 +296,8 @@ export default function OtherUsersPublications({
                           className="w-12 h-12 rounded-full object-cover border-2 border-border group-hover:border-foreground/30 transition-all duration-300 shadow-soft"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                            const nextEl = e.currentTarget.nextElementSibling as HTMLElement;
+                            if (nextEl) nextEl.classList.remove('hidden');
                           }}
                         />
                       ) : null}
@@ -327,79 +326,79 @@ export default function OtherUsersPublications({
               )}
 
               {/* Publications Grid */}
-              {userPublications(userProfile, userIndex)}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                {userProfile.publications.map((pub: Publication, pubIndex) => (
+                  <div
+                    key={pub.id}
+                    className="group animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
+                    style={{ animationDelay: `${(userIndex * 200) + (pubIndex * 100)}ms` }}
+                  >
+                    <Card className="h-full glass overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border-border/40 hover:border-border/60">
+                      <CardContent className="p-0 relative">
+                        <div
+                          onClick={() => {
+                            window.location.href = `/view?id=${encodeURIComponent(pub.id)}`
+                          }}
+                          className="block cursor-pointer"
+                        >
+                          {/* Image Container */}
+                          <div className="relative aspect-[4/5] overflow-hidden bg-muted/30">
+                            {pub.thumb_url ? (
+                              <Image
+                                src={pub.thumb_url}
+                                alt={pub.title}
+                                width={400}
+                                height={500}
+                                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <div className="text-center">
+                                  <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-muted flex items-center justify-center">
+                                    <BookOpen className="w-6 h-6 text-muted-foreground" />
+                                  </div>
+                                  <span className="text-sm text-muted-foreground font-medium">No Preview</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Gradient Overlay on Hover */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/0 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                          </div>
+
+                          {/* Content Section */}
+                          <div className="p-4 space-y-2">
+                            <div className="flex items-start justify-between gap-3">
+                              <h4 className="font-semibold text-foreground line-clamp-2 text-base leading-snug group-hover:text-primary transition-colors duration-300 flex-1">
+                                {pub.title}
+                              </h4>
+                              <div className='outline-1 rounded-full' onClick={(e) => e.stopPropagation()}>
+                                <LikeButton publicationId={pub.id} showText={false} />
+                              </div>
+                            </div>
+                            <div className="flex items-center justify-between pt-1">
+                              <p className="text-xs text-muted-foreground font-medium">
+                                {new Date(pub.created_at).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </p>
+                              <div className="flex items-center gap-1 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                                <ChevronRight className="w-4 h-4" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>
       )}
     </div>
   );
-}
-
-const userPublications = (userProfile: UserProfile, userIndex: number) => {
-  return <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pl-0 sm:pl-6">
-    {userProfile.publications.map((pub: Publication, pubIndex) => (
-      <div
-        key={pub.id}
-        className="group animate-in fade-in-0 slide-in-from-bottom-4 duration-500"
-        style={{ animationDelay: `${(userIndex * 200) + (pubIndex * 100)}ms` }}
-      >
-        <Card className="h-full glass hover:outline-1 overflow-hidden transition-all duration-300 hover:shadow-soft hover:-translate-y-1 hover:scale-[1.02] hover:outline-primary/40 ">
-          <CardContent className="p-2 relative">
-            <div 
-            onClick={() => {
-              // Updated to use publication ID instead of URL and title
-              window.location.href = `/view?id=${encodeURIComponent(pub.id)}`
-            }}
-            className="block cursor-pointer">
-              {/* Image */}
-              <div className="relative overflow-hidden rounded-md border-2">
-                {pub.thumb_url ? (
-                  <Image
-                    src={pub.thumb_url}
-                    alt={pub.title}
-                    width={300}
-                    height={200}
-                    className="w-full h-full object-cover rounded-md transition-transform duration-500 group-hover:scale-105" />
-                ) : (
-                  <div className="w-full h-48 flex items-center rounded-md justify-center glass">
-                    <div className="text-center">
-                      <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-muted flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">No Preview</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Enhanced Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              </div>
-
-              {/* Content */}
-              <div className="p-4">
-                <h4 className="font-semibold text-foreground mb-2 line-clamp-2 text-sm leading-tight group-hover:text-foreground
-                  truncate
-                  transition-colors duration-300">
-                  {pub.title}
-                </h4>
-                <p className="text-xs text-muted-foreground">
-                  {new Date(pub.created_at).toLocaleDateString()}
-                </p>
-              </div>
-            </div>
-
-            {/* Enhanced Like Button */}
-            <div className="absolute bottom-2 right-3 duration-300 cursor-pointer">
-              <div className="bg-background/90 backdrop-blur-sm rounded-full shadow-soft border border-border/50 hover:bg-background/95 transition-all duration-300 hover:scale-110">
-                <LikeButton
-                  publicationId={pub.id}
-                  showText={false} />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    ))}
-  </div>;
 }

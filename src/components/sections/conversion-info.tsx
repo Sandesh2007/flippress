@@ -10,7 +10,7 @@ const conTypes = [
     color: "from-blue-500/20 to-blue-600/20",
     borderColor: "border-blue-200/50",
     badge: "Most Popular",
-    features: ["Page turning effects", "Multimedia support", "Mobile responsive"]
+    features: ["Page turning effects", "Optimized", "Mobile responsive"]
   },
   {
     title: "Social Post",
@@ -96,40 +96,6 @@ export const ConversionInfo = () => {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        {/* Stats Section */}
-        <div className="mt-16 text-center">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-            <div className="text-center group">
-              <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <TrendingUp className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-blue-500 mb-2">300%</div>
-              <div className="text-sm text-muted-foreground">Engagement Increase</div>
-            </div>
-            <div className="text-center group">
-              <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Heart className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-blue-500 mb-2">1K+</div>
-              <div className="text-sm text-muted-foreground">Happy Users</div>
-            </div>
-            <div className="text-center group">
-              <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Zap className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-blue-500 mb-2">10s</div>
-              <div className="text-sm text-muted-foreground">Average Conversion</div>
-            </div>
-            <div className="text-center group">
-              <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
-                <Sparkles className="w-8 h-8 text-white" />
-              </div>
-              <div className="text-2xl font-bold text-blue-500 mb-2">99.9%</div>
-              <div className="text-sm text-muted-foreground">Uptime</div>
-            </div>
-          </div>
         </div>
       </div>
     </section>

@@ -94,8 +94,8 @@ export default function Home() {
             style={{ animationDelay: "0.4s" }}
           >
             {[
-              { value: "1K+", label: "Happy Users" },
-              { value: "5K+", label: "PDFs Converted" },
+              { value: "100+", label: "Happy Users" },
+              { value: "50+", label: "PDFs Converted" },
               { value: "99.9%", label: "Uptime" },
               { value: "24/7", label: "Support" },
             ].map((stat, i) => (
@@ -146,7 +146,7 @@ export default function Home() {
             <FeatureCard
               icon={<BookOpen className="w-10 h-10 text-primary" />}
               title="Interactive Flipbooks"
-              description="Bring your PDFs to life with smooth page-turn animations, clickable links, and multimedia support for a richer reading experience."
+              description="Bring your PDFs to life with smooth page-turn animations, clickable links for a richer reading experience."
             />
             <FeatureCard
               icon={<Zap className="w-10 h-10 text-primary" />}

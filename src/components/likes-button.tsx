@@ -5,12 +5,12 @@ import { Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/database/supabase/client';
 import { useAuth } from '@/components/auth/auth-context';
+import { toastify } from './toastify';
 
 interface LikeButtonProps {
   publicationId: string;
   showText?: boolean;
   disabled?: boolean;
-  uploaderId?: string;
   variant?: 'icon' | 'button';
 }
 
@@ -18,15 +18,11 @@ export default function LikeButton({
   publicationId,
   showText = true,
   disabled = false,
-  uploaderId,
   variant = 'icon',
 }: LikeButtonProps) {
   const { user } = useAuth();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
-
-  const isUploader = user?.id === uploaderId;
-  const isDisabled = disabled || !user || isUploader;
 
   useEffect(() => {
     const fetchLikes = async () => {
@@ -47,7 +43,12 @@ export default function LikeButton({
   }, [publicationId, user]);
 
   const handleToggle = async () => {
-    if (!user || isUploader) return;
+    if (!user) {
+      toastify.warn("You need to be logged in to like publications.");
+      window.location.href = '/auth/register';
+      return;
+    }
+
     const supabase = createClient();
 
     if (liked) {
@@ -73,13 +74,13 @@ export default function LikeButton({
         variant="default"
         size={variant === 'icon' ? 'icon' : 'sm'}
         onClick={handleToggle}
-        disabled={isDisabled}
+        disabled={disabled}
         aria-label={liked ? 'Unlike' : 'Like'}
-        className={`cursor-pointer rounded-full transition-colors ${liked ? "bg-red-300 hover:bg-red-200" :"bg-neutral-100 dark:bg-white hover:bg-red-300" }`}
+        className={`cursor-pointer rounded-full transition-colors ${liked ? "bg-red-300 hover:bg-red-200" : "bg-neutral-100 dark:bg-white hover:bg-red-300"}`}
       >
-        <Heart 
-        size='lg'
-        className={`${liked ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
+        <Heart
+          size='lg'
+          className={`${liked ? 'text-red-500 fill-red-500' : 'text-red-500'}`} />
         {variant === 'button' && <span className="ml-1">{likesCount}</span>}
       </Button>
       {showText && (
