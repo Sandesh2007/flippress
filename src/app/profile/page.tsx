@@ -260,7 +260,7 @@ export default function UserProfile() {
   }
 
   return (
-    <GradientBackground>
+    <>
       {user ? (
         <div className="min-h-screen relative overflow-hidden">
           <div className="relative">
@@ -274,7 +274,7 @@ export default function UserProfile() {
                         {user.avatar_url ? (
                           <Image
                             src={user.avatar_url}
-                            alt= {user.username ? user.username.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
+                            alt={user.username ? user.username.charAt(0).toUpperCase() : user.email.charAt(0).toUpperCase()}
                             width={128}
                             height={128}
                             className="w-full h-full object-cover"
@@ -392,7 +392,7 @@ export default function UserProfile() {
                   ))}
                 </div>
               ) : sortedPublications.length === 0 ? (
-                <NoPublications/>
+                <NoPublications />
               ) : viewMode === 'grid' ? (
                 // Grid View
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -405,7 +405,7 @@ export default function UserProfile() {
                         style={{ animationDelay: `${index * 100}ms` }}
                       >
                         <Card className="h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-glow hover:-translate-y-2 hover:scale-[1.02] border-border/50 hover:border-primary/30 glass rounded-2xl">
-                          <CardContent className="p-2 flex flex-col h-full">
+                          <CardContent className="p-2 flex flex-col h-full cursor-pointer">
                             {/* Image Container */}
                             <div className="relative overflow-hidden border-2 rounded-md">
                               {pub.thumb_url ? (
@@ -430,7 +430,7 @@ export default function UserProfile() {
 
                               {/* Like Count Overlay */}
                               <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full flex items-center gap-1 text-xs font-medium">
-                                <Heart className="w-3 h-3 text-red-500"/>
+                                <Heart className="w-3 h-3 text-red-500" />
                                 {likeCount}
                               </div>
 
@@ -449,7 +449,9 @@ export default function UserProfile() {
                             </div>
 
                             {/* Content */}
-                            <div className="p-4 flex-1 flex flex-col">
+                            <div
+                              onClick={() => router.push(`/view?id=${encodeURIComponent(pub.id)}`)}
+                              className="p-4 flex-1 flex flex-col">
                               <h3 className="font-semibold text-foreground mb-2 line-clamp-2 text-sm leading-tight">
                                 {pub.title}
                               </h3>
@@ -593,7 +595,7 @@ export default function UserProfile() {
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2 text-muted-foreground">
-                                    <Heart className="w-4 h-4 text-red-500"/>
+                                    <Heart className="w-4 h-4 text-red-500" />
                                     <span className="font-medium">{likes[pub.id] || 0}</span>
                                   </div>
                                 </div>
@@ -658,6 +660,6 @@ export default function UserProfile() {
         </div>
       )
       }
-    </GradientBackground>
+    </>
   );
 }

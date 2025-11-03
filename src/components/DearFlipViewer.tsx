@@ -18,19 +18,17 @@ const DFlipViewer = ({
     const [isReady, setIsReady] = useState(false);
     const { theme, resolvedTheme } = useTheme();
 
-    // FIXED: Convert File to data URL with proper cleanup
     useEffect(() => {
         if (pdfFile) {
             setIsLoading(true);
             setIsReady(false);
-            setDataUrl(null); // Clear previous data URL
+            setDataUrl(null);
             
             const reader = new FileReader();
             reader.onload = (e) => {
                 const result = e.target?.result as string;
                 setDataUrl(result);
                 setIsLoading(false);
-                // FIXED: Longer delay to ensure proper initialization
                 setTimeout(() => setIsReady(true), 300);
             };
             reader.onerror = () => {
@@ -79,7 +77,6 @@ const DFlipViewer = ({
         ...options
     };
 
-    // FIXED: Use the custom hook only when dataUrl is available and ready
     useDFlip(containerRef, (isReady && dataUrl) ? dataUrl : '', themeAwareOptions);
 
     if (isLoading) {

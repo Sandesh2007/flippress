@@ -29,7 +29,6 @@ export default function CreatePublicationPage() {
   const [pdf, setPdf] = useState<File | null>(null);
   const [published, setPublished] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState('');
   const [thumbUrl, setThumbUrl] = useState('');
   const [thumbnailDataUrl, setThumbnailDataUrl] = useState('');
   const [error, setError] = useState('');
@@ -37,16 +36,15 @@ export default function CreatePublicationPage() {
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [hasShownToast, setHasShownToast] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [publicationId, setPublicationId] = useState<string | null>(null); // <== Add after other useState hooks
 
   const { pdf: pdfCtx, setPdf: setPdfCtx, clearPdf, loadStoredPdf, storedPdfData } = usePdfUpload();
   const router = useRouter();
   const [isLoadingStoredPdf, setIsLoadingStoredPdf] = useState(false);
 
-  // Fix 1: Make viewerKey dynamic and reset when step changes
   const [viewerKey, setViewerKey] = useState(0);
   const [isViewerReady, setIsViewerReady] = useState(false);
 
-  // Add beforeunload warning to prevent accidental data loss
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isCompleted || (step === 4 && published)) {
@@ -239,13 +237,6 @@ export default function CreatePublicationPage() {
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
-      console.log("PDF uploaded successfully to:", pdfPath);
-
-      // Get public URL
-      const { data: urlData } = supabase.storage.from('publications').getPublicUrl(pdfPath);
-      pdfPublicUrl = urlData.publicUrl;
-      setPdfUrl(pdfPublicUrl);
-      console.log("PDF public URL:", pdfPublicUrl);
 
       // Upload thumbnail if available
       let thumbnailPublicUrl = '';
@@ -279,7 +270,6 @@ export default function CreatePublicationPage() {
             const { data: thumbUrlData } = supabase.storage.from('publications').getPublicUrl(thumbnailPath);
             thumbnailPublicUrl = thumbUrlData.publicUrl;
             setThumbUrl(thumbnailPublicUrl);
-            console.log("Thumbnail public URL:", thumbnailPublicUrl);
           }
         } catch (thumbError) {
           console.error("Error processing thumbnail:", thumbError);
@@ -305,6 +295,9 @@ export default function CreatePublicationPage() {
       }
 
       console.log("Publication created successfully!", insertData);
+      if (insertData && insertData.length > 0) {
+        setPublicationId(insertData[0].id);
+      }
 
       // Set published state and move to next step
       setPublished(true);
@@ -673,9 +666,9 @@ export default function CreatePublicationPage() {
                 <div className="text-muted-foreground text-xs mb-1">Share your publication link:</div>
                 <div className="flex flex-col gap-2 items-center justify-center">
                   <span
-                    onClick={() => { navigator.clipboard.writeText(`flippress.vercel.app/view?pdf=${pdfUrl}`); toastify.success("Copied to clipboard!"); }}
+                    onClick={() => { if (publicationId) {navigator.clipboard.writeText(`flippress.vercel.app/view?id=${publicationId}`); toastify.success("Copied to clipboard!");}}}
                     className="bg-muted border-border rounded-2xl cursor-pointer p-2" >{title}</span>
-                  <Button size="sm" variant="outline" onClick={() => { window.open(`/view?pdf=${pdfUrl}`, '_blank'); }} className='cursor-pointer' >View</Button>
+                  <Button size="sm" variant="outline" onClick={() => { if (publicationId) {window.open(`/view?id=${publicationId}`, '_blank');}}} className='cursor-pointer' >View</Button>
                 </div>
                 <Button
                   className='w-full mt-2 cursor-pointer'

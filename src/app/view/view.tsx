@@ -341,6 +341,8 @@ export default function View() {
                                 height: viewerHeight,
                                 duration: 800,
                                 backgroundColor: 'transparent',
+                                showDownloadControl: false,
+                                showPrintControl: false,
                             }}
                         />
                     </div>

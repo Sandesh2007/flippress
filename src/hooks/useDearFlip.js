@@ -31,7 +31,6 @@ const useDFlip = (containerRef, pdfURL, options = {}) => {
         let isMounted = true;
 
         const initFlipbook = async () => {
-            // FIXED: Better initialization checks
             if (!containerRef?.current || !pdfURL || initializationRef.current) {
                 return;
             }
@@ -70,7 +69,6 @@ const useDFlip = (containerRef, pdfURL, options = {}) => {
 
                 await loadScript('/dflip/js/dflip.min.js');
 
-                // FIXED: Add additional wait for dFlip to be ready
                 let dflipWaitCount = 0;
                 while (typeof window.jQuery.fn.flipBook === 'undefined' && dflipWaitCount < 100) {
                     await new Promise((r) => setTimeout(r, 50));
@@ -106,7 +104,6 @@ const useDFlip = (containerRef, pdfURL, options = {}) => {
 
                 const mergedOptions = { ...defaultOptions, ...options };
 
-                // FIXED: Add a small delay before initializing to ensure DOM is ready
                 await new Promise(resolve => setTimeout(resolve, 100));
 
                 if (!isMounted || !containerRef.current) {
@@ -128,7 +125,6 @@ const useDFlip = (containerRef, pdfURL, options = {}) => {
         };
 
         if (typeof window !== 'undefined' && pdfURL) {
-            // FIXED: Add a small delay to ensure component is fully mounted
             const initTimer = setTimeout(() => {
                 initFlipbook();
             }, 50);
@@ -142,12 +138,10 @@ const useDFlip = (containerRef, pdfURL, options = {}) => {
         return () => {
             isMounted = false;
         };
-    }, [pdfURL]); // FIXED: Only depend on pdfURL, not options to prevent re-initialization
+    }, [pdfURL]);
 
-    // FIXED: Cleanup effect
     useEffect(() => {
         return () => {
-            // Dispose flipbook on unmount
             if (flipbookRef.current?.dispose) {
                 flipbookRef.current.dispose();
                 flipbookRef.current = null;
