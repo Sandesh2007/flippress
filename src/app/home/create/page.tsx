@@ -36,7 +36,7 @@ export default function CreatePublicationPage() {
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const [hasShownToast, setHasShownToast] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
-  const [publicationId, setPublicationId] = useState<string | null>(null); // <== Add after other useState hooks
+  const [publicationId, setPublicationId] = useState<string | null>(null);
 
   const { pdf: pdfCtx, setPdf: setPdfCtx, clearPdf, loadStoredPdf, storedPdfData } = usePdfUpload();
   const router = useRouter();
@@ -50,7 +50,6 @@ export default function CreatePublicationPage() {
       if (isCompleted || (step === 4 && published)) {
         return;
       }
-      // Only show warning if user has made progress
       if (pdf || title.trim() || description.trim() || step > 0) {
         e.preventDefault();
         e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
@@ -64,11 +63,9 @@ export default function CreatePublicationPage() {
 
   useEffect(() => {
     const initializePdf = async () => {
-      // Prevent multiple initializations
       if (hasShownToast) return;
 
       try {
-        // Priority 1: Check if we have a PDF in context with actual file
         if (pdfCtx?.file && !pdf) {
           setPdf(pdfCtx.file);
           setHasShownToast(true);
@@ -97,7 +94,6 @@ export default function CreatePublicationPage() {
           return;
         }
 
-        // If we reach here and still no PDF, mark as shown to prevent loops
         if (!pdf && !hasShownToast) {
           setHasShownToast(true);
         }
@@ -111,32 +107,24 @@ export default function CreatePublicationPage() {
     initializePdf();
   }, [pdfCtx, pdf, hasShownToast, storedPdfData, loadStoredPdf, router]);
 
-  // Fix 1: Better viewer initialization logic
   useEffect(() => {
     if (step === 2 && pdf) {
       setIsViewerReady(false);
-
-      // Generate a new key to force re-render of viewer
       setViewerKey(prev => prev + 1);
-
-      // Longer delay to ensure everything is properly mounted
       const timer = setTimeout(() => {
         setIsViewerReady(true);
       }, 500);
-
       return () => clearTimeout(timer);
     } else {
       setIsViewerReady(false);
     }
   }, [step, pdf]);
 
-  // When a PDF is selected, store it in context and generate thumbnail
   const handlePdfChange = async (file: File | null) => {
     setPdf(file);
     if (file) {
       setPdfCtx({ file, name: file.name, lastModified: file.lastModified });
 
-      // Generate thumbnail for the PDF
       try {
         const thumbnailDataUrl = await generatePdfThumbnailDataUrl(file, {
           width: 300,
@@ -158,16 +146,13 @@ export default function CreatePublicationPage() {
   const handleNext = () => setStep((s) => Math.min(s + 1, steps.length - 1));
   const handleBack = () => setStep((s) => Math.max(s - 1, 0));
 
-  // Fix 2: Improved publish function with better error handling and state management
   const handlePublish = async (retryCount = 0) => {
     console.log("Publishing started", { title, description, pdfName: pdf?.name, retryCount });
 
-    // Reset states at the beginning
     setError('');
     setUploading(true);
     setUploadRetries(retryCount);
 
-    // Validate required fields
     if (!pdf) {
       setError('No PDF file selected');
       setUploading(false);
@@ -180,8 +165,7 @@ export default function CreatePublicationPage() {
       return;
     }
 
-    // Check file size and warn user if it's very large
-    if (pdf.size > 25 * 1024 * 1024) { // 25MB
+    if (pdf.size > 25 * 1024 * 1024) {
       const confirmed = window.confirm(
         `Your file is ${(pdf.size / (1024 * 1024)).toFixed(1)} MB. Large files may take several minutes to upload. Continue?`
       );
@@ -196,12 +180,10 @@ export default function CreatePublicationPage() {
     let pdfPublicUrl = '';
 
     try {
-      // Get current user first
       console.log("Getting user...");
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) {
         console.log("User not authenticated, redirecting to register");
-        // Store state and redirect to register
         localStorage.setItem('flippress_publish_redirect', JSON.stringify({
           title,
           description,
@@ -216,7 +198,6 @@ export default function CreatePublicationPage() {
 
       console.log("User authenticated:", user.id);
 
-      // Create a fresh File object to avoid any stale references
       const freshPdf = new File([pdf], pdf.name, {
         type: pdf.type,
         lastModified: pdf.lastModified
@@ -237,18 +218,17 @@ export default function CreatePublicationPage() {
         throw new Error(`Upload failed: ${uploadError.message}`);
       }
 
+      const { data: pdfUrlData } = supabase.storage.from('publications').getPublicUrl(pdfPath);
+      pdfPublicUrl = pdfUrlData.publicUrl;
 
-      // Upload thumbnail if available
       let thumbnailPublicUrl = '';
       if (thumbnailDataUrl) {
         try {
           console.log("Uploading thumbnail to storage...");
 
-          // Convert data URL to blob
           const response = await fetch(thumbnailDataUrl);
           const thumbnailBlob = await response.blob();
 
-          // Create thumbnail file
           const thumbnailFile = new File([thumbnailBlob], `thumb_${Date.now()}.jpg`, {
             type: 'image/jpeg',
             lastModified: Date.now()
@@ -277,7 +257,6 @@ export default function CreatePublicationPage() {
         }
       }
 
-      // Insert publication row
       console.log("Inserting publication into database...");
       const { data: insertData, error: insertError } = await supabase.from('publications').insert([
         {
@@ -299,16 +278,13 @@ export default function CreatePublicationPage() {
         setPublicationId(insertData[0].id);
       }
 
-      // Set published state and move to next step
       setPublished(true);
       handleNext();
 
-      // Clear the PDF context after successful publish
       setTimeout(() => {
         clearPdf();
       }, 1000);
 
-      // Show success message
       toast.success('Publication published successfully!');
 
     } catch (e: unknown) {
@@ -321,7 +297,6 @@ export default function CreatePublicationPage() {
     }
   };
 
-  // On mount, if redirected from register, restore state
   useEffect(() => {
     const redirectData = localStorage.getItem('flippress_publish_redirect');
     if (redirectData) {
@@ -331,7 +306,6 @@ export default function CreatePublicationPage() {
         setDescription(description || '');
         setStep(step || 0);
 
-        // If we have pdfMeta and it contains the file data, restore it
         if (pdfMeta && pdfMeta.file) {
           setPdf(pdfMeta.file);
           setPdfCtx(pdfMeta);
@@ -363,12 +337,6 @@ export default function CreatePublicationPage() {
     onDrop,
     accept: {
       'application/pdf': ['.pdf'],
-      // I will add support for more formats later
-      // 'application/epub+zip': ['.epub'],
-      // 'application/vnd.ms-powerpoint': ['.ppt'],
-      // 'application/vnd.openxmlformats-officedocument.presentationml.presentation': ['.pptx'],
-      // 'application/msword': ['.doc'],
-      // 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
     },
     maxFiles: 1,
     maxSize: MAX_FILE_SIZE,
@@ -383,305 +351,371 @@ export default function CreatePublicationPage() {
   }, [step, pdf]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/20 py-8 px-2">
-      <div className="w-full max-w-2xl glass shadow-xl rounded-2xl p-0 sm:p-0 overflow-hidden">
-        {/* Stepper */}
-        <div className="flex items-center justify-between px-8 pt-8 pb-4">
-          {steps.map((label, idx) => (
-            <div key={label} className="flex-1 flex flex-col items-center">
-              <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 transition-colors duration-200 ${idx === step ? 'bg-primary text-primary-foreground border-primary' : 'bg-muted text-muted-foreground border-border'} ${idx < step ? 'bg-primary/80 text-primary-foreground border-primary' : ''}`}>
-                {idx < step ? <CheckCircle className="w-5 h-5" /> : idx + 1}
+    <div className="min-h-screen bg-gradient-to-br from-muted/30 via-background to-muted/20 py-8 px-4 lg:px-8">
+      <div className="w-full max-w-7xl mx-auto">
+        {/* Header with Stepper */}
+        <div className="glass shadow-xl rounded-2xl p-8 mb-8">
+          <div className="flex items-center justify-between max-w-4xl mx-auto">
+            {steps.map((label, idx) => (
+              <div key={label} className="flex-1 flex flex-col items-center relative">
+                {idx > 0 && (
+                  <div className={`absolute right-1/2 top-4 w-full h-0.5 -z-10 transition-colors duration-300 ${idx <= step ? 'bg-primary' : 'bg-border'}`} />
+                )}
+                <div className={`w-12 h-12 flex items-center justify-center rounded-full border-2 transition-all duration-300 ${idx === step ? 'bg-primary text-primary-foreground border-primary scale-110 shadow-lg' : 'bg-muted text-muted-foreground border-border'} ${idx < step ? 'bg-primary/80 text-primary-foreground border-primary' : ''}`}>
+                  {idx < step ? <CheckCircle className="w-6 h-6" /> : <span className="text-lg font-bold">{idx + 1}</span>}
+                </div>
+                <span className={`mt-3 text-sm font-semibold ${idx === step ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
               </div>
-              <span className={`mt-2 text-xs font-medium ${idx === step ? 'text-primary' : 'text-muted-foreground'}`}>{label}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-        <div className="border-b border-border mx-8" />
 
-        {/* Content */}
-        <div className="p-8">
-          {!pdf && step > 0 && (
-            <div className="text-destructive text-center p-4 font-bold bg-red-50 border border-red-200 rounded mb-4">
-              You must upload a PDF before continuing. Please upload your file to proceed.
-            </div>
-          )}
-          {error && <div className="text-destructive mb-4 text-center">{error}</div>}
+        {/* Main Content Area */}
+        <div className="glass shadow-xl rounded-2xl overflow-hidden">
+          <div className="p-8 lg:p-12">
+            {!pdf && step > 0 && (
+              <div className="text-destructive text-center p-6 font-bold bg-red-50 border-2 border-red-200 rounded-xl mb-8 text-lg">
+                You must upload a PDF before continuing. Please upload your file to proceed.
+              </div>
+            )}
+            {error && <div className="text-destructive mb-6 text-center text-lg font-semibold">{error}</div>}
 
-          {step === 0 && (
-            <div className="flex flex-col items-center justify-center min-h-[350px]">
-              <div
-                {...getRootProps()}
-                className={`relative overflow-hidden rounded-2xl p-8 text-center cursor-pointer transition-all duration-500 glass border-2 border-dashed shadow-soft hover:shadow-upload focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2
-                  ${isDragActive && !isDragReject ? 'border-primary bg-primary/5 shadow-glow scale-105' : ''}
-                  ${isDragReject ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : ''}
-                  ${!isDragActive && !isDragReject ? 'border-primary/30 hover:border-primary/60 hover:scale-[1.02]' : ''}
-                `}
-                role="button"
-                tabIndex={0}
-                aria-label="Upload file by dragging and dropping or clicking to browse"
-              >
-                <input {...getInputProps()} />
-                <div className="relative">
-                  <div className={`flex items-center justify-center w-24 h-24 mx-auto mb-6 rounded-2xl transition-all duration-300 ${isDragReject ? 'bg-red-100 dark:bg-red-900/30 animate-wiggle' : 'bg-gradient-hero shadow-glow'}`}>
-                    <FileText className={`w-12 h-12 transition-colors ${isDragReject ? 'text-red-600 dark:text-red-400' : 'text-primary'}`} />
+            {step === 0 && (
+              <div className="max-w-5xl mx-auto">
+                <div
+                  {...getRootProps()}
+                  className={`relative overflow-hidden rounded-3xl p-16 text-center cursor-pointer transition-all duration-500 glass border-2 border-dashed shadow-soft hover:shadow-upload focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 min-h-[500px] flex flex-col items-center justify-center
+                    ${isDragActive && !isDragReject ? 'border-primary bg-primary/5 shadow-glow scale-[1.02]' : ''}
+                    ${isDragReject ? 'border-red-400 bg-red-50 dark:bg-red-900/20' : ''}
+                    ${!isDragActive && !isDragReject ? 'border-primary/30 hover:border-primary/60 hover:scale-[1.01]' : ''}
+                  `}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Upload file by dragging and dropping or clicking to browse"
+                >
+                  <input {...getInputProps()} />
+                  <div className="relative">
+                    <div className={`flex items-center justify-center w-32 h-32 mx-auto mb-8 rounded-3xl transition-all duration-300 ${isDragReject ? 'bg-red-100 dark:bg-red-900/30 animate-wiggle' : 'bg-gradient-hero shadow-glow'}`}>
+                      <FileText className={`w-16 h-16 transition-colors ${isDragReject ? 'text-red-600 dark:text-red-400' : 'text-primary'}`} />
+                    </div>
+                    <h3 className="text-4xl font-bold text-foreground mb-6">
+                      {isDragActive && !isDragReject
+                        ? 'Drop your file here'
+                        : isDragReject
+                          ? 'Invalid file type'
+                          : 'Drag & Drop your file'}
+                    </h3>
+                    <p className="text-muted-foreground mb-8 text-xl">
+                      {isDragActive && !isDragReject
+                        ? 'Release to upload your file'
+                        : isDragReject
+                          ? 'Please select a supported file type'
+                          : 'Drag your file here, or click to browse'}
+                    </p>
+                    <div className="text-base text-muted-foreground mb-10 space-y-2">
+                      <p className="font-medium">Maximum file size: {MAX_FILE_SIZE / 1024 / 1024}MB</p>
+                      <p>Supported formats: PDF, EPUB</p>
+                    </div>
+                    <Button
+                      type="button"
+                      className="hover:shadow-glow text-white shadow-soft hover:scale-105 px-10 py-6 text-xl font-semibold"
+                      size="lg"
+                    >
+                      <UploadCloud className="w-6 h-6 mr-3" />
+                      Browse Files
+                    </Button>
                   </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-4">
-                    {isDragActive && !isDragReject
-                      ? 'Drop your file here'
-                      : isDragReject
-                        ? 'Invalid file type'
-                        : 'Drag & Drop your file'}
-                  </h3>
-                  <p className="text-muted-foreground mb-6 text-lg">
-                    {isDragActive && !isDragReject
-                      ? 'Release to upload your file'
-                      : isDragReject
-                        ? 'Please select a supported file type'
-                        : 'Drag your file here, or click to browse'}
-                  </p>
-                  <div className="text-sm text-muted-foreground mb-8 space-y-1">
-                    <p>Maximum file size: {MAX_FILE_SIZE / 1024 / 1024}MB</p>
-                    <p>Supported formats: PDF, EPUB</p>
+                </div>
+
+                {pdf && (
+                  <div className="mt-10 w-full max-w-2xl mx-auto">
+                    <div className="glass rounded-2xl p-8 border border-border">
+                      <div className="flex items-center gap-6 mb-6">
+                        {thumbnailDataUrl && (
+                          <div className="w-32 h-40 rounded-xl border-2 border-border overflow-hidden bg-white shadow-md flex-shrink-0">
+                            <img
+                              src={thumbnailDataUrl}
+                              alt="PDF Thumbnail"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <div className="font-bold text-2xl text-primary mb-2">{pdf.name}</div>
+                          <div className="text-base text-muted-foreground">{(pdf.size / 1024 / 1024).toFixed(2)} MB</div>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-3 justify-center">
+                        <Button variant="outline" size="lg" onClick={() => handlePdfChange(null)} className="cursor-pointer text-base px-6">Remove File</Button>
+                        <Button variant="outline" size="lg" onClick={() => pdfInputRef.current?.click()} className="cursor-pointer text-base px-6">Choose Different File</Button>
+                      </div>
+                      <Button onClick={handleNext} className="w-full mt-6 cursor-pointer text-lg py-6" size="lg">Continue to Details →</Button>
+                    </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {step === 1 && (
+              <div className="max-w-4xl mx-auto">
+                <h2 className="text-3xl font-bold text-center mb-10">Publication Details</h2>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className="space-y-8">
+                    <div>
+                      <label className="block text-lg font-semibold mb-4 text-foreground">Title</label>
+                      <Input
+                        placeholder="Enter a compelling title"
+                        value={title}
+                        onChange={e => setTitle(e.target.value)}
+                        className="w-full glass border-2 rounded-xl p-4 focus:border-primary/50 h-14 text-lg font-medium"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-lg font-semibold mb-4 text-foreground">Description</label>
+                      <Textarea
+                        placeholder="Describe your publication in detail"
+                        value={description}
+                        onChange={e => setDescription(e.target.value)}
+                        className="glass shadow-soft focus:shadow-glow focus:border-primary/50 transition-all duration-300 min-h-[200px] resize-none text-base p-4"
+                      />
+                    </div>
+                  </div>
+                  <div className="glass rounded-xl p-6 border border-border flex flex-col justify-center">
+                    <h3 className="text-xl font-semibold mb-4">Preview</h3>
+                    {thumbnailDataUrl && (
+                      <div className="mb-4 flex justify-center">
+                        <div className="w-48 h-64 rounded-xl border-2 border-border overflow-hidden bg-white shadow-md">
+                          <img
+                            src={thumbnailDataUrl}
+                            alt="PDF Thumbnail"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
+                    )}
+                    <div className="text-center">
+                      <div className="font-bold text-xl text-foreground mb-2">{title || 'Untitled'}</div>
+                      <div className="text-muted-foreground text-sm">{description || 'No description yet'}</div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-4 justify-between mt-10">
                   <Button
-                    type="button"
-                    className="hover:shadow-glow text-white shadow-soft hover:scale-105 px-8 py-4 text-lg"
+                    variant="outline"
+                    onClick={handleBack}
                     size="lg"
+                    className='cursor-pointer border-border/50 hover:border-border hover:bg-muted/50 transition-all duration-300 text-lg px-8'
                   >
-                    <UploadCloud className="w-5 h-5 mr-3" />
-                    Browse Files
+                    ← Back
+                  </Button>
+                  <Button
+                    onClick={handleNext}
+                    disabled={!title || !description}
+                    size="lg"
+                    className='cursor-pointer hover:shadow-glow text-white shadow-soft hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-lg px-8'
+                  >
+                    Next →
                   </Button>
                 </div>
               </div>
+            )}
 
-              {/* Show file info and continue button if file is selected */}
-              {pdf && (
-                <div className="mt-6 w-full max-w-md text-center">
-                  {/* Thumbnail preview */}
-                  {thumbnailDataUrl && (
-                    <div className="mb-4 flex justify-center">
-                      <div className="w-24 h-32 rounded-lg border border-border overflow-hidden bg-white shadow-sm">
+            {step === 2 && (
+              <div className="max-w-7xl mx-auto">
+                <h2 className="text-3xl font-bold text-center mb-8">Preview Your Publication</h2>
+                {pdf ? (
+                  <div className="border-2 rounded-2xl overflow-hidden w-full h-full min-h-[700px] shadow-lg">
+                    {!isViewerReady ? (
+                      <div className="flex items-center justify-center h-96">
+                        <div className="flex items-center gap-3">
+                          <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                          <span className="text-xl">Initializing PDF viewer...</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <DFlipViewer
+                        key={viewerKey}
+                        pdfFile={pdf}
+                        options={{
+                          webgl: true,
+                          autoEnableOutline: true,
+                          pageMode: window.innerWidth <= 768 ? 1 : 2,
+                          singlePageMode: window.innerWidth <= 768 ? 1 : 0,
+                          responsive: true,
+                          height: window.innerWidth >= 1024 ? 800 :
+                            window.innerWidth >= 768 ? 600 : 400,
+                        }}
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center text-xl">No PDF selected for preview.</p>
+                )}
+                <div className="flex gap-4 justify-between mt-8">
+                  <Button variant="secondary" onClick={handleBack} size="lg" className='cursor-pointer text-lg px-8'>← Back</Button>
+                  <Button onClick={handleNext} disabled={!pdf} size="lg" className="cursor-pointer text-lg px-8">Next →</Button>
+                </div>
+              </div>
+            )}
+
+            {step === 3 && (
+              <div className="max-w-5xl mx-auto">
+                <h2 className="text-3xl font-bold text-center mb-10">Review & Publish</h2>
+                <div className="glass rounded-2xl p-10 border border-border">
+                  <div className="flex items-start gap-8 mb-8">
+                    <div className="w-48 h-64 flex items-center justify-center rounded-2xl bg-muted border-2 border-border overflow-hidden flex-shrink-0">
+                      {thumbnailDataUrl ? (
                         <img
                           src={thumbnailDataUrl}
                           alt="PDF Thumbnail"
                           className="w-full h-full object-cover"
                         />
+                      ) : (
+                        <ImageIcon className="w-20 h-20 text-muted-foreground" />
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-6">
+                      <div>
+                        <Label className="text-base font-semibold text-muted-foreground mb-2 block">Title</Label>
+                        <div id='title' className="font-bold text-3xl text-foreground">{title}</div>
+                      </div>
+
+                      <div>
+                        <Label className="text-base font-semibold text-muted-foreground mb-2 block">Description</Label>
+                        <div id='description' className="text-foreground text-lg leading-relaxed">{description}</div>
+                      </div>
+
+                      <div className="flex items-center gap-3 border-2 border-border rounded-xl p-4 bg-muted">
+                        <FileText className="w-6 h-6 text-primary" />
+                        <span className="text-base font-semibold">{pdf?.name}</span>
+                        <span className="text-sm text-muted-foreground ml-auto">{pdf && (pdf.size / 1024 / 1024).toFixed(2)} MB</span>
+                      </div>
+                      {thumbnailDataUrl && (
+                        <div className="flex items-center gap-3 border-2 border-green-200 rounded-xl p-4 bg-green-50">
+                          <ImageIcon className="w-6 h-6 text-green-600" />
+                          <span className="text-green-600 text-base font-semibold">Thumbnail generated successfully</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-4 justify-between">
+                    <Button variant="secondary" onClick={handleBack} disabled={uploading} size="lg" className='cursor-pointer text-lg px-8'>← Back</Button>
+                    <Button onClick={() => handlePublish()} disabled={uploading || !title.trim() || !description.trim()} size="lg" className={uploading ? 'opacity-75 text-lg px-8' : 'cursor-pointer text-lg px-8'}>
+                      {uploading ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-5 h-5 border-2 border-white text-white border-t-transparent rounded-full animate-spin"></div>
+                          Publishing...
+                        </div>
+                      ) : (
+                        'Publish Now'
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {uploading && (
+                    <div className="mt-8 p-6 bg-muted rounded-xl border border-border">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="w-4 h-4 bg-primary rounded-full animate-pulse"></div>
+                        <span className="text-base font-semibold text-muted-foreground">Uploading to cloud storage...</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mb-2">
+                        {pdf && `File size: ${(pdf.size / (1024 * 1024)).toFixed(1)} MB`}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {pdf && pdf.size > 10 * 1024 * 1024 ?
+                          `Large file detected. This may take several minutes. Please don't close this page.` :
+                          `This may take a few moments. Please don't close this page.`
+                        }
                       </div>
                     </div>
                   )}
-
-                  <div className="font-semibold text-lg text-primary">{pdf.name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{(pdf.size / 1024 / 1024).toFixed(2)} MB</div>
-
-                  <div className="flex gap-2 mt-4 justify-center">
-                    <Button variant="outline" size="sm" onClick={() => handlePdfChange(null)} className="cursor-pointer">Remove File</Button>
-                    <Button variant="outline" size="sm" onClick={() => pdfInputRef.current?.click()} className="cursor-pointer">Choose Different File</Button>
-                  </div>
-                  <Button onClick={handleNext} className="w-full mt-4 cursor-pointer" size="lg">Continue to Details</Button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="flex flex-col gap-6">
-              <div>
-                <label className="block text-sm font-medium mb-3 text-foreground">Title</label>
-                <Input
-                  placeholder="Enter a title for your publication"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  className="w-full glass border-2 rounded-md p-2 focus:border-primary/50 h-12 text-lg font-medium"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-3 text-foreground">Description</label>
-                <Textarea
-                  placeholder="Describe your publication"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  className="glass shadow-soft focus:shadow-glow focus:border-primary/50 transition-all duration-300 min-h-[100px] resize-none"
-                />
-              </div>
-              <div className="flex gap-3 justify-between mt-4">
-                <Button
-                  variant="outline"
-                  onClick={handleBack}
-                  className='cursor-pointer border-border/50 hover:border-border hover:bg-muted/50 transition-all duration-300'
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  disabled={!title || !description}
-                  className='cursor-pointer hover:shadow-glow text-white shadow-soft hover:scale-105 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100'
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="flex flex-col gap-6">
-              <h2 className="text-xl font-semibold text-center">Preview your PDF</h2>
-              {pdf ? (
-                <div className="border rounded-lg overflow-hidden w-full h-full min-h-[400px]">
-                  {!isViewerReady ? (
-                    <div className="flex items-center justify-center h-64">
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-                        <span>Initializing PDF viewer...</span>
+                  
+                  {error && !uploading && (
+                    <div className="mt-8 p-6 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800 rounded-xl">
+                      <div className="flex items-start gap-4">
+                        <div className="w-6 h-6 text-red-600 dark:text-red-400 mt-0.5 text-xl">⚠️</div>
+                        <div className="flex-1">
+                          <p className="text-red-800 dark:text-red-200 text-base font-semibold mb-2">
+                            Upload Failed
+                          </p>
+                          <p className="text-red-700 dark:text-red-300 text-base mb-4">
+                            {error}
+                          </p>
+                          <div className="flex gap-3">
+                            <Button
+                              size="lg"
+                              onClick={() => handlePublish(uploadRetries + 1)}
+                              className="bg-red-600 hover:bg-red-700 text-white"
+                            >
+                              Retry Upload
+                            </Button>
+                            <Button
+                              size="lg"
+                              variant="outline"
+                              onClick={() => setError('')}
+                            >
+                              Dismiss
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ) : (
-                    <DFlipViewer
-                      key={viewerKey}
-                      pdfFile={pdf}
-                      options={{
-                        webgl: true,
-                        autoEnableOutline: true,
-                        pageMode: typeof window !== 'undefined' && window.innerWidth <= 768 ? 1 : 2,
-                        singlePageMode: typeof window !== 'undefined' && window.innerWidth <= 768 ? 1 : 0,
-                        responsive: true,
-                        height: typeof window !== 'undefined' && window.innerWidth >= 1024 ? 700 :
-                          typeof window !== 'undefined' && window.innerWidth >= 768 ? 600 : 400,
+                  )}
+                </div>
+              </div>
+            )}
+
+            {step === 4 && published && (
+              <div className="max-w-4xl mx-auto">
+                <div className="glass rounded-2xl p-12 text-center border border-border">
+                  <div className="flex items-center justify-center w-24 h-24 rounded-full bg-green-100 dark:bg-green-900/20 mb-6 mx-auto shadow-lg">
+                    <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="text-3xl font-bold text-green-700 dark:text-green-400 mb-8">🎉 Publication Created Successfully!</div>
+                  
+                  <div className="w-full max-w-2xl mx-auto space-y-6">
+                    <div className="glass rounded-xl p-6 border border-border">
+                      <div className="text-muted-foreground text-base mb-4 font-semibold">Share your publication:</div>
+                      <div className="flex flex-col gap-4 items-center justify-center">
+                        <div className="w-full">
+                          <div
+                            onClick={() => { if (publicationId) {navigator.clipboard.writeText(`flippress.vercel.app/view?id=${publicationId}`); toastify.success("Copied to clipboard!");}}}
+                            className="bg-muted border-2 border-border rounded-xl cursor-pointer p-6 hover:bg-muted/80 hover:border-primary/50 transition-all duration-300 hover:scale-[1.02]"
+                          >
+                            <div className="text-xl font-bold text-foreground mb-2">{title}</div>
+                            <div className="text-sm text-muted-foreground font-mono">
+                              {publicationId ? `flippress.vercel.app/view?id=${publicationId}` : 'Loading...'}
+                            </div>
+                          </div>
+                        </div>
+                        <Button 
+                          size="lg" 
+                          variant="outline" 
+                          onClick={() => { if (publicationId) {window.open(`/view?id=${publicationId}`, '_blank');}}} 
+                          className='cursor-pointer text-lg px-8 w-full'
+                        >
+                          View Publication
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <Button
+                      className='w-full cursor-pointer text-lg py-6'
+                      size="lg"
+                      onClick={() => {
+                        setIsCompleted(true);
+                        window.location.href = `/`;
                       }}
-                    />
-                  )}
-                </div>
-              ) : (
-                <p className="text-muted-foreground text-center">No PDF selected for preview.</p>
-              )}
-              <div className="flex gap-2 justify-between mt-2">
-                <Button variant="secondary" onClick={handleBack} className='cursor-pointer'>Back</Button>
-                <Button onClick={handleNext} disabled={!pdf} className="cursor-pointer">Next</Button>
-              </div>
-            </div>
-          )}
-
-          {step === 3 && (
-            <div className="flex flex-col gap-6">
-              <div className="flex items-center gap-4">
-                <div className="w-24 h-24 flex items-center justify-center rounded-xl bg-muted border border-border overflow-hidden">
-                  {thumbnailDataUrl ? (
-                    <img
-                      src={thumbnailDataUrl}
-                      alt="PDF Thumbnail"
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <ImageIcon className="w-10 h-10 text-muted-foreground" />
-                  )}
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Title</Label>
-                  <div id='title' className="font-semibold text-lg text-foreground">{title}</div>
-
-                  <Label className="text-sm mt-2 font-medium text-gray-400">Description</Label>
-                  <div id='description' className="text-foreground text-lg mt-1">{description}</div>
-                  <div className="mt-2 flex items-center gap-2 border border-border rounded-lg p-2 bg-muted">
-                    <FileText className="w-4 h-4 text-primary" />
-                    <span className="text-medium text-sm font-medium">{pdf?.name}</span>
-                  </div>
-                  {thumbnailDataUrl && (
-                    <div className="mt-2 flex items-center gap-2 border border-green-200 rounded-lg p-2 bg-green-50">
-                      <ImageIcon className="w-4 h-4 text-green-600" />
-                      <span className="text-green-600 text-sm font-medium">Thumbnail generated</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex gap-2 justify-between mt-2">
-                <Button variant="secondary" onClick={handleBack} disabled={uploading} className='cursor-pointer'>Back</Button>
-                <Button onClick={() => handlePublish()} disabled={uploading || !title.trim() || !description.trim()} className={uploading ? 'opacity-75' : 'cursor-pointer'}>
-                  {uploading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white text-white border-t-transparent rounded-full animate-spin"></div>
-                      Publishing...
-                    </div>
-                  ) : (
-                    'Publish'
-                  )}
-                </Button>
-              </div>
-              {uploading && (
-                <div className="mt-4 p-4 bg-muted rounded-lg">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-3 h-3 bg-primary rounded-full animate-pulse"></div>
-                    <span className="text-sm text-muted-foreground">Uploading to cloud storage...</span>
-                  </div>
-                  <div className="text-xs text-muted-foreground mb-2">
-                    {pdf && `File size: ${(pdf.size / (1024 * 1024)).toFixed(1)} MB`}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {pdf && pdf.size > 10 * 1024 * 1024 ?
-                      `Large file detected. This may take several minutes. Please don't close this page.` :
-                      `This may take a few moments. Please don't close this page.`
-                    }
+                    >
+                      ✓ Finish & Go Home
+                    </Button>
                   </div>
                 </div>
-              )}
-              {error && !uploading && (
-                <div className="mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <div className="flex items-start gap-3">
-                    <div className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5">⚠️</div>
-                    <div className="flex-1">
-                      <p className="text-red-800 dark:text-red-200 text-sm font-medium mb-1">
-                        Upload Failed
-                      </p>
-                      <p className="text-red-700 dark:text-red-300 text-sm mb-3">
-                        {error}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handlePublish(uploadRetries + 1)}
-                          className="bg-red-600 hover:bg-red-700 text-white"
-                        >
-                          Retry Upload
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setError('')}
-                        >
-                          Dismiss
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 4 && published && (
-            <div className="flex flex-col gap-6 items-center text-center">
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/20 mb-2">
-                <CheckCircle className="w-8 h-8 text-green-600 dark:text-green-400" />
               </div>
-              <div className="text-lg font-bold text-green-700 dark:text-green-400">Publication Created!</div>
-              <div className="w-full">
-                <div className="text-muted-foreground text-xs mb-1">Share your publication link:</div>
-                <div className="flex flex-col gap-2 items-center justify-center">
-                  <span
-                    onClick={() => { if (publicationId) {navigator.clipboard.writeText(`flippress.vercel.app/view?id=${publicationId}`); toastify.success("Copied to clipboard!");}}}
-                    className="bg-muted border-border rounded-2xl cursor-pointer p-2" >{title}</span>
-                  <Button size="sm" variant="outline" onClick={() => { if (publicationId) {window.open(`/view?id=${publicationId}`, '_blank');}}} className='cursor-pointer' >View</Button>
-                </div>
-                <Button
-                  className='w-full mt-2 cursor-pointer'
-                  onClick={() => {
-                    setIsCompleted(true);
-                    window.location.href = `/`;
-                  }}
-                >
-                  Finish
-                </Button>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </div>
