@@ -213,7 +213,11 @@ export function Navbar() {
                             <Button
                                 variant="outline"
                                 className="w-full bg-blue-500 hover:shadow-glow text-white border-blue-500/30 rounded-xl transition-all duration-300 hover:scale-105"
-                                onClick={handleCloseMenu}
+                                onClick={() => {
+                                    handleCloseMenu();
+                                    window.location.href = "/home/create";
+                                }}
+
                             >
                                 <Upload className="w-4 h-4 mr-2" />
                                 Upload PDF
@@ -232,7 +236,7 @@ export function Navbar() {
                                             <MobileSidebarItem
                                                 icon={<Home className="w-5 h-5" />}
                                                 label="Home"
-                                                href="/"
+                                                href="/home/publisher"
                                                 onClick={handleCloseMenu}
                                             />
 
