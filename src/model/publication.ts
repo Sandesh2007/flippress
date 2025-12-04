@@ -1,10 +1,8 @@
-// export interface User {
-//     id: string;
-//     email: string;
-//     avatar_url?: string;
-//     created_at?: string;
-//     updated_at?: string;
-//     bio?: string;
-//     username?: string;
-//     location?: string;
-// }
+export interface Publication {
+    id: string;
+    user_id: string;
+    title: string;
+    thumb_url: string | null;
+    created_at: string;
+    pdf_url: string;
+}

@@ -196,7 +196,7 @@ export default function SearchBox({
                       {pub.avatar_url ? (
                         <img
                           src={pub.avatar_url}
-                          alt="publication avatar"
+                          alt=""
                           className="w-10 h-10 rounded-lg object-cover border border-gray-200 dark:border-gray-700 group-hover:border-blue-500 transition-colors"
                         />
                       ) : (

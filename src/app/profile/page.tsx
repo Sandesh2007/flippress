@@ -10,12 +10,12 @@ import { createClient } from '@/lib/database/supabase/client';
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import Image from "next/image";
-import { AlertDialog, Input, NoPublications, usePublications } from "@/components";
+import { AlertDialog, Input, usePublications } from "@/components";
+import { NoPublications } from "@/layout/no-publications";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { User, BookOpen } from 'lucide-react';
-import { shouldSkipLoading } from '@/components/layout/navigation-state-manager';
 import { GradientBackground } from "@/components/ui/gradient-background";
 
 interface LikeRow {
@@ -230,7 +230,7 @@ export default function UserProfile() {
 
   // Show loading only if auth is loading or if we don't have any data yet
   // Skip loading during navigation if we have cached data
-  const isLoading = authLoading || (publicationsLoading && publications.length === 0 && !shouldSkipLoading());
+  const isLoading = authLoading || (publicationsLoading && publications.length === 0 );
 
   // Add a fallback loading state for when data is stale
   const [isDataStale, setIsDataStale] = useState(false);
@@ -379,7 +379,7 @@ export default function UserProfile() {
                 </div>
               </div>
 
-              {publicationsLoading && publications.length === 0 && !shouldSkipLoading() ? (
+              {publicationsLoading && publications.length === 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                   {Array.from({ length: 8 }).map((_, i) => (
                     <Card key={i} className="animate-pulse bg-gradient-card border border-border/50 rounded-2xl">

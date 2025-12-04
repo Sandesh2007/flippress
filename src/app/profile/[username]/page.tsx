@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
-import LikeButton from '@/components/likes-button';
+import { LikeButton } from '@/components';
 import { MapPin, BookOpen, Calendar, Share2, ExternalLink } from 'lucide-react';
 import logo from '@/../public/logo.svg'
 

@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,37 +9,8 @@ import { RefreshCw, Users, BookOpen, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/database/supabase/client';
 import { useAuth } from '@/components/auth/auth-context';
 import LikeButton from './likesButton';
-
-interface UserProfile {
-  id: string;
-  username: string;
-  avatar_url: string | null;
-  publications: Publication[];
-}
-
-interface DatabaseUserProfile {
-  id: string;
-  username: string;
-  avatar_url: string | null;
-}
-
-interface Publication {
-  id: string;
-  user_id: string;
-  title: string;
-  thumb_url: string | null;
-  created_at: string;
-  pdf_url: string;
-}
-
-interface OtherUsersPublicationsProps {
-  title?: string;
-  description?: string;
-  maxUsers?: number;
-  maxPublicationsPerUser?: number;
-  showUserInfo?: boolean;
-  className?: string;
-}
+import { Publication } from '@/model/publication';
+import { DatabaseUserProfile, OtherUsersPublicationsProps, UserProfile } from '@/model/other';
 
 // Cache for discover data
 const discoverCache = new Map<string, { data: UserProfile[]; timestamp: number }>();
@@ -58,8 +29,9 @@ export default function OtherUsersPublications({
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  const isMountedRef = useRef(true);
   const fetchControllerRef = useRef<AbortController | null>(null);
+
+  const isMountedRef = useRef(true);
   const isInitializedRef = useRef(false);
 
   useEffect(() => {
@@ -74,49 +46,29 @@ export default function OtherUsersPublications({
   }, []);
 
   const fetchData = useCallback(async (forceRefresh = false) => {
-    if (!isMountedRef.current) return;
-
-    // Skip loading if we're navigating and have cached data
-    if (!forceRefresh && shouldSkipLoading()) {
-      const cacheKey = `discover_${maxUsers}_${maxPublicationsPerUser}`;
-      const cached = discoverCache.get(cacheKey);
-      if (cached && isMountedRef.current) {
-        setUsers(cached.data);
-        setLoading(false);
-        setError(null);
-        return;
-      }
-    }
-
-    // Check cache first 
     const cacheKey = `discover_${maxUsers}_${maxPublicationsPerUser}`;
     const cached = discoverCache.get(cacheKey);
     const now = Date.now();
-    const cacheAge = now - (cached?.timestamp || 0);
 
-    // Use shorter cache duration for better data freshness
-    if (!forceRefresh && cached && cacheAge < DISCOVER_CACHE_DURATION) {
-      if (isMountedRef.current) {
-        setUsers(cached.data);
-        setLoading(false);
-        setError(null);
-      }
+    if (!forceRefresh && cached && (now - cached.timestamp) < DISCOVER_CACHE_DURATION) {
+      setUsers(cached.data);
+      setLoading(false);
+      setError(null);
       return;
     }
 
-    // If cache is stale, show loading but use cached data temporarily
-    if (cached && cacheAge < DISCOVER_CACHE_DURATION * 2) {
-      if (isMountedRef.current) {
-        setUsers(cached.data);
-      }
+    // Show stale cache while fetching
+    if (cached) {
+      setUsers(cached.data);
     }
 
+    // Cancel any ongoing fetch
     if (fetchControllerRef.current) {
       fetchControllerRef.current.abort();
     }
 
-    fetchControllerRef.current = new AbortController();
-    const signal = fetchControllerRef.current.signal;
+    const controller = new AbortController();
+    fetchControllerRef.current = controller;
 
     setLoading(true);
     setError(null);
@@ -124,21 +76,18 @@ export default function OtherUsersPublications({
     try {
       const supabase = createClient();
 
-      if (!isMountedRef.current || signal.aborted) return;
-
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id,username,avatar_url')
         .limit(maxUsers);
 
+      // Check abort after each async operation
+      if (controller.signal.aborted) return;
       if (profilesError) throw profilesError;
-      if (!isMountedRef.current || signal.aborted) return;
 
-      if (!profiles) {
-        if (isMountedRef.current) {
-          setUsers([]);
-          setLoading(false);
-        }
+      if (!profiles || profiles.length === 0) {
+        setUsers([]);
+        setLoading(false);
         return;
       }
 
@@ -147,8 +96,8 @@ export default function OtherUsersPublications({
         .select('*')
         .order('created_at', { ascending: false });
 
+      if (controller.signal.aborted) return;
       if (pubsError) throw pubsError;
-      if (!isMountedRef.current || signal.aborted) return;
 
       // Group publications by user
       const pubsByUser: Record<string, Publication[]> = {};
@@ -167,37 +116,36 @@ export default function OtherUsersPublications({
         }))
         .filter(userProfile => userProfile.publications.length > 0);
 
-      if (!isMountedRef.current || signal.aborted) return;
+      if (controller.signal.aborted) return;
 
-      // Update cache
       discoverCache.set(cacheKey, { data: usersWithPubs, timestamp: now });
 
-      if (isMountedRef.current) {
-        setUsers(usersWithPubs);
-        setLoading(false);
-      }
+      setUsers(usersWithPubs);
+      setLoading(false);
     } catch (err: any) {
-      if (err.name === 'AbortError' || !isMountedRef.current) {
+      // Don't update state if aborted
+      if (err.name === 'AbortError' || controller.signal.aborted) {
         return;
       }
 
       console.error('Error fetching data:', err);
-      if (isMountedRef.current) {
-        setError('Failed to load data. Please try again.');
-        setLoading(false);
-      }
+      setError('Failed to load data. Please try again.');
+      setLoading(false);
     }
   }, [maxUsers, maxPublicationsPerUser]);
 
   useEffect(() => {
-    if (!isInitializedRef.current) {
-      isInitializedRef.current = true;
-      fetchData();
-    }
+    fetchData();
+
+    return () => {
+      if (fetchControllerRef.current) {
+        fetchControllerRef.current.abort();
+      }
+    };
   }, [fetchData]);
 
   const handleRetry = useCallback(() => {
-    fetchData(true); // Force refresh
+    fetchData(true);
   }, [fetchData]);
 
   return (

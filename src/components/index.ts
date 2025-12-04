@@ -4,6 +4,7 @@ export * from './auth';
 // UI components
 export * from './ui';
 export * from './common';
+export * from './forms';
 
 // Individual components
 export { ThemeToggle } from './common/themeToggle';

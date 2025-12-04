@@ -12,27 +12,45 @@ export default function ForgotPassword() {
     const supabase = createBrowserClient();
     const [open, setOpen] = useState(false);
     const [email, setEmail] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling
+
+        if (isSubmitting) return; // Prevent double submission
+
         if (!email.trim()) {
             toast.error('Please enter your email');
             return;
         }
 
-        const {error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/update-password` });
-        if (error) {
-            toast.error("An error occurred while resetting your password");
-            toast.error(error.message);
-        } else {
-            toast.success('Password reset email sent');
-            setOpen(false);
+        setIsSubmitting(true);
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/auth/update-password`
+            });
+
+            if (error) {
+                toast.error(error.message || "An error occurred while resetting your password");
+            } else {
+                toast.success('Password reset email sent');
+                setEmail(''); // Clear email after success
+                setOpen(false);
+            }
+        } catch (err) {
+            toast.error("An unexpected error occurred");
+            console.error('Password reset error:', err);
+        } finally {
+            setIsSubmitting(false);
         }
     }
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost">
+                <Button variant="ghost" type="button">
                     <Mail className="h-4 w-4 mr-2" />
                     Forgot Password
                 </Button>
@@ -41,14 +59,15 @@ export default function ForgotPassword() {
                 onInteractOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
                 onCloseAutoFocus={(e) => e.preventDefault()}
-                className="sm:max-w-md">
+                className="sm:max-w-md"
+            >
                 <DialogHeader>
                     <DialogTitle>Forgot Password</DialogTitle>
                     <DialogDescription>
                         Enter your email to reset your password
                     </DialogDescription>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className='space-y-4' >
+                <form onSubmit={handleSubmit} className='space-y-4'>
                     <div className="space-y-2">
                         <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
                             Email
@@ -60,13 +79,18 @@ export default function ForgotPassword() {
                             placeholder='Enter your email'
                             value={email}
                             onChange={e => setEmail(e.target.value)}
+                            disabled={isSubmitting}
+                            required
                         />
                     </div>
                     <Button
                         variant="outline"
                         type="submit"
                         className='cursor-pointer'
-                    >Reset Password</Button>
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? 'Sending...' : 'Reset Password'}
+                    </Button>
                 </form>
             </DialogContent>
         </Dialog>
