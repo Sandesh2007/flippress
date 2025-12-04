@@ -1,196 +1,326 @@
 "use client";
-import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import type { User } from "@/lib/user";
+
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+  useCallback,
+  useMemo,
+} from "react";
+import type { User } from "@/model/user";
 import { createBrowserClient } from "@/lib/database";
 import toast from "react-hot-toast";
-import { useRouter } from 'next/navigation';
+import { useRouter } from "next/navigation";
+import type { User as SupabaseUser, Session } from "@supabase/supabase-js";
+
+// ============================================
+// Types
+// ============================================
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  isAuthenticated: boolean;
   refreshUser: () => Promise<void>;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface CachedUserData {
+  user: User;
+  timestamp: number;
+}
+
+// ============================================
+// Constants
+// ============================================
 
 const USER_CACHE_KEY = "flippress_user";
-const USER_CACHE_EXPIRY = 1000 * 60 * 60; // 1 hour
+const USER_CACHE_EXPIRY_MS = 60 * 60 * 1000; // 1 hour
+const PROFILE_FIELDS = "username, avatar_url, bio, location" as const;
 
-// Helper to get cached user with expiry check
-function getCachedUser(): User | null {
-  const cached = localStorage.getItem(USER_CACHE_KEY);
-  if (!cached) return null;
-  try {
-    const { user, ts } = JSON.parse(cached);
-    if (!user || !ts) return null;
-    if (Date.now() - ts > USER_CACHE_EXPIRY) {
-      localStorage.removeItem(USER_CACHE_KEY);
+// ============================================
+// Cache Utilities
+// ============================================
+
+const userCache = {
+  get(): User | null {
+    if (typeof window === "undefined") return null;
+
+    try {
+      const cached = localStorage.getItem(USER_CACHE_KEY);
+      if (!cached) return null;
+
+      const { user, timestamp }: CachedUserData = JSON.parse(cached);
+      const isExpired = Date.now() - timestamp > USER_CACHE_EXPIRY_MS;
+
+      if (!user || isExpired) {
+        this.clear();
+        return null;
+      }
+
+      return user;
+    } catch {
+      this.clear();
       return null;
     }
-    return user;
-  } catch {
-    return null;
-  }
-}
+  },
 
-// Helper to set cached user with timestamp
-function setCachedUser(user: User | null) {
-  if (user) {
-    localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ user, ts: Date.now() }));
-  } else {
+  set(user: User | null): void {
+    if (typeof window === "undefined") return;
+
+    if (user) {
+      const data: CachedUserData = { user, timestamp: Date.now() };
+      localStorage.setItem(USER_CACHE_KEY, JSON.stringify(data));
+    } else {
+      this.clear();
+    }
+  },
+
+  clear(): void {
+    if (typeof window === "undefined") return;
     localStorage.removeItem(USER_CACHE_KEY);
-  }
+  },
+};
+
+// ============================================
+// Utility Functions
+// ============================================
+
+function cleanUsername(username: unknown): string | null {
+  if (typeof username !== "string" || !username) return null;
+  return username.replace(/\s+/g, "").toLowerCase();
 }
 
-// Helper to check if username is valid
-function isUsernameValid(username: string | undefined): boolean {
-  return !!(
-    username &&
+function buildUser(
+  supabaseUser: SupabaseUser,
+  profile?: Record<string, unknown> | null
+): User {
+  const { id, email, user_metadata, created_at } = supabaseUser;
+
+  return {
+    id,
+    email: email ?? "",
+    username: cleanUsername(profile?.username ?? user_metadata?.username) ?? "USERNAME",
+    avatar_url: (profile?.avatar_url ?? user_metadata?.avatar_url) as string | undefined,
+    bio: (profile?.bio ?? user_metadata?.bio) as string | undefined,
+    location: (profile?.location ?? user_metadata?.location) as string | undefined,
+    created_at,
+  };
+}
+
+export function isValidUsername(username: unknown): username is string {
+  return (
+    typeof username === "string" &&
+    username.length > 0 &&
     username === username.toLowerCase() &&
-    /^[a-z0-9_\s]+$/.test(username)
+    /^[a-z0-9_]+$/.test(username)
   );
 }
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+// ============================================
+// Context
+// ============================================
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// ============================================
+// Provider
+// ============================================
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(() => userCache.get());
   const [loading, setLoading] = useState(true);
-  const supabase = createBrowserClient();
   const router = useRouter();
 
-  // Load user from cache on mount (with expiry)
-  useEffect(() => {
-    const cachedUser = getCachedUser();
-    if (cachedUser) {
-      setUser(cachedUser);
-    }
-  }, []);
+  const supabase = useMemo(() => createBrowserClient(), []);
 
-  // Cache user whenever it changes
-  useEffect(() => {
-    setCachedUser(user);
-  }, [user]);
-
-  // Multi-tab sync: listen for storage changes
-  useEffect(() => {
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === USER_CACHE_KEY) {
-        const cachedUser = getCachedUser();
-        setUser(cachedUser);
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
-
-  const refreshUser = useCallback(async () => {
-    setLoading(true);
-    const { data: authData } = await supabase.auth.getUser();
-    if (authData.user) {
-      const { id, email, user_metadata, created_at } = authData.user;
-      
-      // Fetch profile from profiles table
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', id)
+  // Fetch profile from database
+  const fetchProfile = useCallback(
+    async (userId: string) => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(PROFILE_FIELDS)
+        .eq("id", userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-        console.error('Error fetching profile:', error);
-        toast.error('Failed to load user profile');
+      // PGRST116 = not found, which is fine for new users
+      if (error && error.code !== "PGRST116") {
+        console.error("Profile fetch error:", error);
+        return null;
+      }
+
+      return data;
+    },
+    [supabase]
+  );
+
+  // Refresh user from server
+  const refreshUser = useCallback(async () => {
+    setLoading(true);
+
+    try {
+      const {
+        data: { user: authUser },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error || !authUser) {
         setUser(null);
+        userCache.clear();
+        return;
+      }
+
+      const profile = await fetchProfile(authUser.id);
+      const newUser = buildUser(authUser, profile);
+
+      setUser(newUser);
+      userCache.set(newUser);
+    } catch (error) {
+      console.error("Refresh user error:", error);
+      toast.error("Failed to load profile");
+      setUser(null);
+      userCache.clear();
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase, fetchProfile]);
+
+  // Sign out
+  const signOut = useCallback(async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      userCache.clear();
+      router.push("/");
+    } catch (error) {
+      console.error("Sign out error:", error);
+      toast.error("Failed to sign out");
+    }
+  }, [supabase, router]);
+
+  // Handle session changes
+  const handleSession = useCallback(
+    async (session: Session | null) => {
+      if (!session?.user) {
+        setUser(null);
+        userCache.clear();
         setLoading(false);
         return;
       }
 
-      // Create user object prioritizing database profile over metadata
-      const newUser = {
-        id,
-        email: email ?? '',
-        username: profile?.username || (user_metadata?.username ? user_metadata.username.replace(/\s+/g, '') : null), // Remove spaces from Google username
-        avatar_url: profile?.avatar_url || user_metadata?.avatar_url,
-        bio: profile?.bio || user_metadata?.bio,
-        location: profile?.location || user_metadata?.location,
-        created_at: created_at,
-      };
-
-      setUser(newUser);
-    } else {
-      setUser(null);
-    }
-    setLoading(false);
-  }, [supabase]);
-
-  useEffect(() => {
-    refreshUser();
-    const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const { id, email, user_metadata, created_at } = session.user;
-        
-        // Fetch profile from database immediately after auth state change
-        const { data: profile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', id)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching profile on auth change:', error);
-        }
-
-        // Create user object prioritizing database profile
-        const newUser = {
-          id,
-          email: email ?? "",
-          username: profile?.username || (user_metadata?.username ? user_metadata.username.replace(/\s+/g, '') : null), // Remove spaces from Google username
-          avatar_url: profile?.avatar_url || user_metadata?.avatar_url,
-          bio: profile?.bio || user_metadata?.bio,
-          location: profile?.location || user_metadata?.location,
-          created_at: created_at,
-        };
+      try {
+        const profile = await fetchProfile(session.user.id);
+        const newUser = buildUser(session.user, profile);
 
         setUser(newUser);
-      } else {
-        setUser(null);
+        userCache.set(newUser);
+      } catch (error) {
+        console.error("Session handler error:", error);
+      } finally {
+        setLoading(false);
       }
-    });
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
-  }, [refreshUser, supabase]);
-
-  // useEffect(() => {
-  //   if (!loading && user) {
-      // Check if user has a valid username in the database
-  //     const hasValidUsername = isUsernameValid(user.username);
-      
-  //     if (!hasValidUsername && typeof window !== 'undefined' && window.location.pathname !== '/set-username') {
-        // Add a small delay to prevent race conditions
-  //       const timeoutId = setTimeout(() => {
-          // Double-check the pathname in case user navigated away
-  //         if (window.location.pathname !== '/set-username') {
-  //           router.replace('/set-username');
-  //         }
-  //       }, 100);
-        
-  //       return () => clearTimeout(timeoutId);
-  //     }
-  //   }
-  // }, [user, loading, router]);
-
-  return (
-    <AuthContext.Provider value={{ user, loading, refreshUser, setUser }}>
-      {children}
-    </AuthContext.Provider>
+    },
+    [fetchProfile]
   );
-};
 
-// Export setUser for optimistic UI updates
-export const useAuth = () => {
+  // Initialize & subscribe to auth changes
+  useEffect(() => {
+    refreshUser();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase, refreshUser, handleSession]);
+
+  // Multi-tab sync
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === USER_CACHE_KEY) {
+        setUser(userCache.get());
+      }
+    };
+
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
+  // Sync cache on user change
+  useEffect(() => {
+    userCache.set(user);
+  }, [user]);
+
+  const value = useMemo<AuthContextType>(
+    () => ({
+      user,
+      loading,
+      isAuthenticated: !!user,
+      refreshUser,
+      setUser,
+      signOut,
+    }),
+    [user, loading, refreshUser, signOut]
+  );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// ============================================
+// Hooks
+// ============================================
+
+export function useAuth(): AuthContextType {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}; 
+}
+
+/**
+ * Returns the current user's avatar URL with fallback support
+ */
+export function useUserAvatar(fallback: string | null = null): string | null {
+  const { user } = useAuth();
+  return user?.avatar_url ?? fallback;
+}
+
+/**
+ * Redirects to set-username page if user hasn't set a valid username
+ */
+export function useRequireUsername(redirectPath = "/set-username") {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  const needsUsername = !loading && user && !isValidUsername(user.username);
+
+  useEffect(() => {
+    if (needsUsername && window.location.pathname !== redirectPath) {
+      router.replace(redirectPath);
+    }
+  }, [needsUsername, router, redirectPath]);
+
+  return { needsUsername, loading };
+}
+
+/**
+ * Redirects to login if user is not authenticated
+ */
+export function useRequireAuth(redirectPath = "/login") {
+  const { user, loading, isAuthenticated } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.replace(redirectPath);
+    }
+  }, [loading, isAuthenticated, router, redirectPath]);
+
+  return { user, loading, isAuthenticated };
+}

@@ -133,7 +133,7 @@ module.exports = {
         },
     },
     plugins: [
-        function({ addUtilities, addComponents, theme }: { addUtilities: any; addComponents: any; theme: any }) {
+        function ({ addUtilities, addComponents, theme }: { addUtilities: any; addComponents: any; theme: any }) {
             const newUtilities = {
                 '.bg-gradient-hero': {
                     background: 'linear-gradient(135deg, oklch(0.25 0.01 0) 0%, oklch(0.35 0.01 0) 100%)',

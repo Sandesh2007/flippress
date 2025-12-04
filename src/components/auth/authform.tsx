@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from "react";
-import { ArrowLeft, Eye, EyeOff, Search, X } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, X } from "lucide-react";
 import { Button } from "../ui/button";
 import Link from "next/link";
 import toast from "react-hot-toast";
