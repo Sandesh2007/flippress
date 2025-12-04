@@ -109,7 +109,7 @@ export function Navbar() {
                             <Image src={logo} alt="logo" height={36} width={36} className="sm:h-12 sm:w-12 transition-transform duration-300 group-hover:scale-110" priority />
                         </div>
                         <div className="flex flex-col">
-                            <span className="font-bold text-lg sm:text-xl text-blue-500">Flippress</span>
+                            <span className="font-bold text-lg sm:text-xl text-cyan-500">Flippress</span>
                             <span className="text-xs text-muted-foreground hidden sm:block">Digital Publishing</span>
                         </div>
                     </Link>

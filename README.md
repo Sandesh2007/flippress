@@ -5,3 +5,8 @@
 - Removed unwanted functions and hooks.
 - Fixed ui bugs while navigating.
 - Fixed uploading errors on mobile.
+
+
+## Documentation
+
+[Docs](DOCUMENTATION.md)
