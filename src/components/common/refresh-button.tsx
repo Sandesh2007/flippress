@@ -2,11 +2,9 @@
 
 import { Button } from "@/components/";
 import { RefreshCw } from "lucide-react";
-import { clearAllCaches } from "@/lib/cache-utils";
 
 export function RefreshButton() {
     const handleRefresh = () => {
-        clearAllCaches();
         window.location.reload();
     };
 
