@@ -1,9 +1,9 @@
 "use client";
 
-import { ConversionInfo } from "@/components/sections/conversion-info";
-import { FileUpload } from "@/components/sections/file-upload";
-import { Testimonials } from "@/components/features/testimonials";
-import { useAuth } from "@/components/auth/auth-context";
+// import { ConversionInfo } from "@/components/sections/conversion-info";
+// import { FileUpload } from "@/components/sections/file-upload";
+// import { Testimonials } from "@/components/features/testimonials";
+// import { useAuth } from "@/components/auth/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
@@ -36,28 +36,28 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
 }
 
 export default function Home() {
-  const { user, loading } = useAuth();
+  // const { user, loading } = useAuth();
   const router = useRouter();
 
-  useEffect(() => {
-    if (!loading && user) {
-      router.replace("/home/publisher");
-    }
-  }, [user, loading, router]);
+  // useEffect(() => {
+  //   if (!loading && user) {
+  //     router.replace("/home/publisher");
+  //   }
+  // }, [user, loading, router]);
 
-  if (!loading && user) {
-    return (
-      <div className="flex flex-col justify-center items-center h-screen">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary mb-4"></div>
-          <div className="absolute inset-0 animate-ping rounded-full h-16 w-16 border-2 border-primary/30"></div>
-        </div>
-        <p className="text-muted-foreground animate-pulse-slow">
-          Redirecting to your dashboard<span className="loading-dots"></span>
-        </p>
-      </div>
-    );
-  }
+  // if (!loading && user) {
+  //   return (
+  //     <div className="flex flex-col justify-center items-center h-screen">
+  //       <div className="relative">
+  //         <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary mb-4"></div>
+  //         <div className="absolute inset-0 animate-ping rounded-full h-16 w-16 border-2 border-primary/30"></div>
+  //       </div>
+  //       <p className="text-muted-foreground animate-pulse-slow">
+  //         Redirecting to your dashboard<span className="loading-dots"></span>
+  //       </p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <main className="min-h-screen relative overflow-hidden">
@@ -116,7 +116,7 @@ export default function Home() {
 
         {/* Upload */}
         <div className="animate-scale-in" style={{ animationDelay: "0.6s" }}>
-          <FileUpload />
+          {/* <FileUpload /> */}
         </div>
       </section>
 
@@ -192,10 +192,10 @@ export default function Home() {
           </div>
         </div>
       </section>
-      
+
       {/* <SupportedFormats /> */}
-      <ConversionInfo />
-      <Testimonials />
+      {/* <ConversionInfo />
+      <Testimonials /> */}
     </main>
   );
 }

@@ -1,16 +1,13 @@
 import type { Metadata } from "next";
-import { Poppins } from "next/font/google";
+import { Geist, Geist_Mono, Poppins } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/layout/theme-provider";
+import { ThemeProvider } from "@/layout/themeProvider";
+import { NetworkStatus } from "@/specials/networkStatus";
 import { Toaster } from "react-hot-toast";
-import ClientLayout from "@/components/layout/client-layout";
+import { GradientBackground } from "@/components/common/gradiantBackground";
+import ClientLayout from "@/layout/clientLayout";
 import { AuthProvider } from "@/components/auth/auth-context";
-import { PdfUploadProvider, PublicationsProvider } from '@/components';
-import { NetworkStatus } from "@/components/features/network-status";
-import { NavigationStateManager } from "@/components/layout/navigation-state-manager";
-import { LoadingStateManager } from "@/components/ui/loading-state-manager";
-import { PageTransition } from "@/components/ui/page-transition";
-import { ErrorBoundary } from "@/components/ui/error-boundary";
+import { PdfUploadProvider, PublicationsProvider } from "@/components";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -25,37 +22,37 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{ children: React.ReactNode }>) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressContentEditableWarning>
       <body
-        className={`${poppins.className} bg-transparent antialiased scroll-smooth`}>
-        <ErrorBoundary>
-          <PdfUploadProvider>
-            <AuthProvider>
-              <PublicationsProvider>
-                <ThemeProvider
-                  attribute="class"
-                  defaultTheme="dark"
-                  enableSystem
-                >
-                  <LoadingStateManager>
-                    <ClientLayout>
-                      <NavigationStateManager />
-                      <Toaster
-                        position="top-center"
-                      />
-                      <NetworkStatus/>
-                      <PageTransition>
-                        {children}
-                      </PageTransition>
-                    </ClientLayout>
-                  </LoadingStateManager>
-                </ThemeProvider>
-              </PublicationsProvider>
-            </AuthProvider>
-          </PdfUploadProvider>
-        </ErrorBoundary>
+        className={`${poppins.className} antialiased`}
+      >
+        <AuthProvider>
+          <ThemeProvider
+            attribute={"class"}
+            enableSystem
+          >
+            <GradientBackground>
+              <ClientLayout>
+                <PdfUploadProvider>
+
+                  <PublicationsProvider>
+
+
+                    <Toaster
+                      position="bottom-right"
+                    />
+                    <NetworkStatus />
+                    {children}
+                  </PublicationsProvider>
+                </PdfUploadProvider>
+              </ClientLayout>
+            </GradientBackground>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

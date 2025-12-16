@@ -1,29 +1,14 @@
 // Auth components
 export * from './auth';
 
-// Layout components
-export * from './layout';
-
-// Form components
-export * from './forms';
-
-// Feature components
-export * from './features';
-
 // UI components
 export * from './ui';
-
-// Section components
-export * from './sections';
+export * from './common';
+export * from './forms';
 
 // Individual components
-export { ThemeToggle } from './themeToggle';
-export * from './PdfUploadContext';
-export * from './PublicationsContext';
-export { default as PdfViewer } from './PdfViewer';
-export { default as DFlipViewer } from './DearFlipViewer';
-export { default as PublicationsTab } from './publicationsTab';
-export { default as OtherUsersPublications } from './OtherUsersPublications';
-export { default as SearchBox } from './SearchBox';
-export { default as AlertDialog } from './alert-dialog';
-export { default as LikeButton } from './likes-button';
+export { ThemeToggle } from './common/themeToggle';
+
+
+export * from './common/PdfUploadContext';
+export * from './common/PublicationsContext';

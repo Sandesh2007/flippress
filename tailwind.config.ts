@@ -90,32 +90,32 @@ module.exports = {
                 'dark-hover': '0 12px 40px oklch(0 0 0 / 0.25)',
             },
             colors: {
-                // Minimalist color palette
+                // Modern teal primary with cool accent
                 primary: {
-                    50: 'oklch(0.98 0.01 0)',
-                    100: 'oklch(0.95 0.02 0)',
-                    200: 'oklch(0.9 0.05 0)',
-                    300: 'oklch(0.8 0.1 0)',
-                    400: 'oklch(0.7 0.15 0)',
-                    500: 'oklch(0.25 0.01 0)',
-                    600: 'oklch(0.2 0.01 0)',
-                    700: 'oklch(0.15 0.01 0)',
-                    800: 'oklch(0.1 0.01 0)',
-                    900: 'oklch(0.05 0.01 0)',
-                    950: 'oklch(0.02 0.01 0)',
+                    50: 'oklch(0.98 0.01 200)',
+                    100: 'oklch(0.96 0.02 200)',
+                    200: 'oklch(0.9 0.06 200)',
+                    300: 'oklch(0.84 0.09 200)',
+                    400: 'oklch(0.78 0.11 200)',
+                    500: 'oklch(0.72 0.12 200)',
+                    600: 'oklch(0.66 0.12 200)',
+                    700: 'oklch(0.6 0.11 200)',
+                    800: 'oklch(0.53 0.1 200)',
+                    900: 'oklch(0.46 0.09 200)',
+                    950: 'oklch(0.4 0.08 200)',
                 },
                 accent: {
-                    50: 'oklch(0.98 0.01 0)',
-                    100: 'oklch(0.95 0.02 0)',
-                    200: 'oklch(0.9 0.05 0)',
-                    300: 'oklch(0.8 0.1 0)',
-                    400: 'oklch(0.7 0.15 0)',
-                    500: 'oklch(0.35 0.01 0)',
-                    600: 'oklch(0.3 0.01 0)',
-                    700: 'oklch(0.25 0.01 0)',
-                    800: 'oklch(0.2 0.01 0)',
-                    900: 'oklch(0.15 0.01 0)',
-                    950: 'oklch(0.1 0.01 0)',
+                    50: 'oklch(0.98 0.01 240)',
+                    100: 'oklch(0.96 0.02 240)',
+                    200: 'oklch(0.9 0.05 240)',
+                    300: 'oklch(0.84 0.08 240)',
+                    400: 'oklch(0.78 0.1 240)',
+                    500: 'oklch(0.7 0.12 240)',
+                    600: 'oklch(0.62 0.12 240)',
+                    700: 'oklch(0.54 0.11 240)',
+                    800: 'oklch(0.46 0.1 240)',
+                    900: 'oklch(0.4 0.09 240)',
+                    950: 'oklch(0.35 0.08 240)',
                 },
             },
             spacing: {
@@ -133,7 +133,7 @@ module.exports = {
         },
     },
     plugins: [
-        function({ addUtilities, addComponents, theme }: { addUtilities: any; addComponents: any; theme: any }) {
+        function ({ addUtilities, addComponents, theme }: { addUtilities: any; addComponents: any; theme: any }) {
             const newUtilities = {
                 '.bg-gradient-hero': {
                     background: 'linear-gradient(135deg, oklch(0.25 0.01 0) 0%, oklch(0.35 0.01 0) 100%)',

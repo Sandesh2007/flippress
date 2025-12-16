@@ -1,9 +1,10 @@
 "use client"
 import { Card, CardContent } from "@/components/ui/card"
-import { NoPublications, usePublications } from "@/components"
+import { NoPublications } from "@/layout/no-publications"
 import { BarChart3, FileText, Heart, Calendar, ChartLine } from "lucide-react"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/database/supabase/client"
+import { usePublications } from "@/components/common/PublicationsContext"
 
 interface LikeRow {
   publication_id: string;

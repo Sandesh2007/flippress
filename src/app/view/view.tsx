@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
-import DFlipViewer from "@/components/DearFlipViewer";
+import { DFlipViewer } from '@/components';
 import { Button } from "@/components/ui/button";
 import { AlertCircle, FileText, ArrowLeft, Loader2, Share2, Calendar, User, ExternalLink } from "lucide-react";
 import { useRouter } from 'next/navigation';

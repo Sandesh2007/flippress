@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { CheckCircle, Sparkles, Zap, Shield, Users, Star } from 'lucide-react';
-import { GradientBackground } from '@/components/ui/gradient-background';
 
 const features = [
   'Upload and publish PDFs',
@@ -14,9 +13,7 @@ const features = [
 
 const Pricing = () => {
   return (
-    <GradientBackground
-    showFloatingElements
-    >
+    
       <div className="min-h-screen relative overflow-hidden">
         {/* Background Elements */}
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5"></div>
@@ -135,7 +132,6 @@ const Pricing = () => {
           </div>
         </div>
       </div>
-    </GradientBackground>
   );
 };
 

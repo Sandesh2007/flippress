@@ -1,13 +1,12 @@
-# Intro
+# NEW V2
 
-Project structure
-- For Project structure: [Project structure](src/README.md)
+## Changes:
+- Added new ui and color schemes.
+- Removed unwanted functions and hooks.
+- Fixed ui bugs while navigating.
+- Fixed uploading errors on mobile.
 
-How pdf is shown after processing
-- For Pdf viewer component: [Pdf viewer](src/components/PdfViewer.md)
 
-How publication info is managed across all pages
-- See [PublicationsContext](src/components/PublicationsContext.md)
+## Documentation
 
-Fresh new components added yeyeeyye
-- See [UX_IMPROVEMENTS](UX_IMPROVEMENTS.md)
+[Docs](DOCUMENTATION.md)
