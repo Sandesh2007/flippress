@@ -28,23 +28,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressContentEditableWarning>
       <body
-        className={`${poppins.className} antialiased`}
+        className={`${poppins.className} bg-neutral-50 dark:bg-neutral-800 antialiased`}
       >
         <AuthProvider>
-          <ThemeProvider
-            attribute={"class"}
-            enableSystem
-          >
+          <ThemeProvider attribute={"class"} enableSystem>
             <GradientBackground>
               <ClientLayout>
                 <PdfUploadProvider>
-
                   <PublicationsProvider>
-
-
-                    <Toaster
-                      position="bottom-right"
-                    />
+                    <Toaster position="bottom-right" />
                     <NetworkStatus />
                     {children}
                   </PublicationsProvider>

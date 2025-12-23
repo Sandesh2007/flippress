@@ -2,7 +2,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import logo from "@/../public/logo.svg";
 import Image from "next/image";
-import { Facebook, Instagram, Linkedin, Youtube, TwitterIcon, Sparkles, Mail, Heart, XIcon } from "lucide-react";
+import {
+  Facebook,
+  Instagram,
+  Linkedin,
+  Youtube,
+  TwitterIcon,
+  Sparkles,
+  Mail,
+  Heart,
+  XIcon,
+} from "lucide-react";
 // import { useAuth } from "../auth/auth-context";
 import Link from "next/link";
 
@@ -23,7 +33,7 @@ const footerLinks = {
   legal: [
     { name: "Privacy Policy", href: "/privacy" },
     { name: "Terms of Service", href: "#terms" },
-  ]
+  ],
 };
 
 const socialLinks = [
@@ -31,7 +41,7 @@ const socialLinks = [
   { icon: Facebook, href: "#", label: "Facebook" },
   { icon: Instagram, href: "#", label: "Instagram" },
   { icon: Linkedin, href: "#", label: "LinkedIn" },
-  { icon: Youtube, href: "#", label: "YouTube" }
+  { icon: Youtube, href: "#", label: "YouTube" },
 ];
 
 export const Footer = () => {
@@ -85,13 +95,18 @@ export const Footer = () => {
                 <div className="absolute inset-0 rounded-2xl opacity-20 animate-pulse-slow"></div>
               </div>
               <div className="flex flex-col">
-                <span className="text-2xl font-bold text-blue-500">Flippress</span>
-                <span className="text-sm text-muted-foreground">Digital Publishing</span>
+                <span className="text-2xl font-bold text-blue-500">
+                  Flippress
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  Digital Publishing
+                </span>
               </div>
             </div>
             <p className="text-muted-foreground mb-8 leading-relaxed text-lg">
-              Transform your static documents into engaging, interactive digital publications
-              that captivate your audience across all devices with stunning animations and modern design.
+              Transform your static documents into engaging, interactive digital
+              publications that captivate your audience across all devices with
+              stunning animations and modern design.
             </p>
             <div className="flex space-x-4">
               {socialLinks.map((social, index) => (
@@ -125,7 +140,9 @@ export const Footer = () => {
           </div>
 
           <div>
-            <h4 className="font-bold text-lg mb-6 text-foreground">Resources</h4>
+            <h4 className="font-bold text-lg mb-6 text-foreground">
+              Resources
+            </h4>
             <ul className="space-y-4">
               {footerLinks.resources.map((link, index) => (
                 <li key={index}>
@@ -179,7 +196,8 @@ export const Footer = () => {
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col-reverse sm:flex-col md:flex-row items-center justify-between gap-4 text-center sm:text-left">
             <p className="text-sm text-muted-foreground flex items-center justify-center md:justify-start gap-2">
-              &copy; 2024 Flippress. Made with <Heart className="w-4 h-4 fill-red-500 text-red-500" />.
+              &copy; 2026 Flippress. Made with{" "}
+              <Heart className="w-4 h-4 fill-red-500 text-red-500" />.
             </p>
             <div className="flex flex-wrap justify-center md:justify-end items-center gap-4 sm:gap-6">
               <a

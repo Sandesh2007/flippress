@@ -1,9 +1,7 @@
 "use client";
 
-// import { ConversionInfo } from "@/components/sections/conversion-info";
 // import { FileUpload } from "@/components/sections/file-upload";
-// import { Testimonials } from "@/components/features/testimonials";
-// import { useAuth } from "@/components/auth/auth-context";
+import { useAuth } from "@/components/auth/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import {
@@ -12,7 +10,6 @@ import {
   Zap,
   Users,
   Star,
-  ArrowRight,
   Shield,
   Globe,
 } from "lucide-react";
@@ -29,35 +26,39 @@ function FeatureCard({ icon, title, description }: FeatureCardProps) {
       <div className="w-20 h-20 rounded-2xl bg-gradient-hero flex items-center justify-center mb-6 group-hover:animate-heartbeat">
         {icon}
       </div>
-      <h3 className="text-2xl font-semibold mb-4 text-gradient-hero">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed text-lg">{description}</p>
+      <h3 className="text-2xl font-semibold mb-4 text-gradient-hero">
+        {title}
+      </h3>
+      <p className="text-muted-foreground leading-relaxed text-lg">
+        {description}
+      </p>
     </div>
   );
 }
 
 export default function Home() {
-  // const { user, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
-  // useEffect(() => {
-  //   if (!loading && user) {
-  //     router.replace("/home/publisher");
-  //   }
-  // }, [user, loading, router]);
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace("/home/publisher");
+    }
+  }, [user, loading, router]);
 
-  // if (!loading && user) {
-  //   return (
-  //     <div className="flex flex-col justify-center items-center h-screen">
-  //       <div className="relative">
-  //         <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary mb-4"></div>
-  //         <div className="absolute inset-0 animate-ping rounded-full h-16 w-16 border-2 border-primary/30"></div>
-  //       </div>
-  //       <p className="text-muted-foreground animate-pulse-slow">
-  //         Redirecting to your dashboard<span className="loading-dots"></span>
-  //       </p>
-  //     </div>
-  //   );
-  // }
+  if (!loading && user) {
+    return (
+      <div className="flex flex-col justify-center items-center h-screen">
+        <div className="relative">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-primary/20 border-t-primary mb-4"></div>
+          <div className="absolute inset-0 animate-ping rounded-full h-16 w-16 border-2 border-primary/30"></div>
+        </div>
+        <p className="text-muted-foreground animate-pulse-slow">
+          Redirecting to your dashboard<span className="loading-dots"></span>
+        </p>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen relative overflow-hidden">
@@ -76,16 +77,18 @@ export default function Home() {
             <br />
             <span className="text-foreground">into Interactive</span>
             <br />
-            <span className="text-neutral-900 dark:text-neutral-50">Flipbooks</span>
+            <span className="text-neutral-900 dark:text-neutral-50">
+              Flipbooks
+            </span>
           </h1>
 
           <p
             className="text-xl md:text-2xl text-muted-foreground mb-12 max-w-4xl mx-auto leading-relaxed animate-fade-in"
             style={{ animationDelay: "0.2s" }}
           >
-            Upload your PDF documents and convert them into beautiful, interactive
-            flipbooks that captivate your audience with smooth animations and a
-            modern reading experience.
+            Upload your PDF documents and convert them into beautiful,
+            interactive flipbooks that captivate your audience with smooth
+            animations and a modern reading experience.
           </p>
 
           {/* Stats */}
@@ -121,7 +124,7 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 px-4 bg-gradient-to-b from-transparent to-muted/20 relative">
+      <section className="py-24 px-4 `bg-linear-to- from-transparent to-muted/20 relative">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
             <div className="inline-flex items-center gap-2 px-6 py-3 rounded-full glass border border-primary/20 mb-8">
@@ -193,7 +196,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* <SupportedFormats /> */}
+      {/*<SupportedFormats />*/}
       {/* <ConversionInfo />
       <Testimonials /> */}
     </main>
